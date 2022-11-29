@@ -1,0 +1,74 @@
+---
+title: "STA521 PROJECT 2"
+author: "Linxuan Wang, Jingan Zhou"
+date: "11/28/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(tidyverse)
+require(ggplot2)
+```
+
+## Data loading
+```{r, results='hide'}
+image1 = read.table("image_data/imagem1.txt", header=F)
+colnames(image1) = c("y","x","label","NDAI","SD","CORR","DF","CF","BF","AF","AN")
+image2 = read.table("image_data/imagem2.txt", header=F)
+colnames(image2) = c("y","x","label","NDAI","SD","CORR","DF","CF","BF","AF","AN")
+image3 = read.table("image_data/imagem3.txt", header=F)
+colnames(image3) = c("y","x","label","NDAI","SD","CORR","DF","CF","BF","AF","AN")
+```
+
+## Question 1
+### (a) half-page summary
+
+### (b) summary and plot
+```{r, summary of the data}
+
+image1 %>%
+  group_by(label) %>%
+  summarise(count = n())
+
+image2 %>%
+  group_by(label) %>%
+  summarise(count = n())
+
+image3 %>%
+  group_by(label) %>%
+  summarise(count = n())
+
+```
+```{r, plot}
+image1 %>%
+  ggplot(aes(x,y)) +
+  geom_raster(aes(fill=label)) +
+  scale_fill_gradientn(colours = c('gray','black','white'))
+
+image2 %>%
+  ggplot(aes(x,y)) +
+  geom_raster(aes(fill=label)) +
+  scale_fill_gradientn(colours = c('gray','black','white'))
+
+image3 %>%
+  ggplot(aes(x,y)) +
+  geom_raster(aes(fill=label)) +
+  scale_fill_gradientn(colours = c('gray','black','white'))
+```
+We observe several trends and patterns: (i) Areas of both clouds and surfaces tend to be large. In other words, there is almost no slim slices of clouds and surfaces. This is reflected in the dataset as pixels near to each other tend to have the same labels, unless they are at the boundaries between classes with different labels; (ii) Almost no "black holes" exist in either clouds or surfaces. This pattern shows somewhat continuity of cloud and surface distribution: 
+ 
+The i.i.d. assumption is not justified for the samples. Since we have observed large areas of clouds and surfaces, given a pixel in the image, in most of the scenarios it has the same label as its neighbors, which implies that pixels near each other are highly dependent and tend to have the same label.
+
+### (c) Visual and quantitative EDA
+
+```{r, pairwise relationship}
+
+```
+
+
+
+
+
+
+
