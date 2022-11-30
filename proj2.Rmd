@@ -7,8 +7,11 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-require(tidyverse)
-require(ggplot2)
+library(tidyverse)
+library(ggplot2)
+library(GGally)
+library(patchwork)
+library(stats)
 ```
 
 ## Data loading
@@ -44,27 +47,131 @@ image3 %>%
 image1 %>%
   ggplot(aes(x,y)) +
   geom_raster(aes(fill=label)) +
-  scale_fill_gradientn(colours = c('gray','black','white'))
+  scale_fill_gradientn(colours = c('grey','black','white'))
 
 image2 %>%
   ggplot(aes(x,y)) +
   geom_raster(aes(fill=label)) +
-  scale_fill_gradientn(colours = c('gray','black','white'))
+  scale_fill_gradientn(colours = c('grey','black','white'))
 
 image3 %>%
   ggplot(aes(x,y)) +
   geom_raster(aes(fill=label)) +
-  scale_fill_gradientn(colours = c('gray','black','white'))
+  scale_fill_gradientn(colours = c('grey','black','white'))
 ```
 We observe several trends and patterns: (i) Areas of both clouds and surfaces tend to be large. In other words, there is almost no slim slices of clouds and surfaces. This is reflected in the dataset as pixels near to each other tend to have the same labels, unless they are at the boundaries between classes with different labels; (ii) Almost no "black holes" exist in either clouds or surfaces. This pattern shows somewhat continuity of cloud and surface distribution: 
  
 The i.i.d. assumption is not justified for the samples. Since we have observed large areas of clouds and surfaces, given a pixel in the image, in most of the scenarios it has the same label as its neighbors, which implies that pixels near each other are highly dependent and tend to have the same label.
 
 ### (c) Visual and quantitative EDA
-
-```{r, pairwise relationship}
-
+#### (i)
+```{r,cache=TRUE, pairwise relationship}
+image_binded <- rbind(image1,image2,image3)
+ggpairs(image_binded,columns = c("NDAI", "SD", "CORR","DF","CF","BF","AF","AN"))
 ```
+
+#### (ii)
+```{r}
+p1 = image_binded %>% mutate(label = as.character(label)) %>%
+  ggplot() +
+  geom_density(aes(x=SD, fill=label),alpha=0.6)
+
+p2 = image_binded %>% mutate(label = as.character(label),
+                        log_SD = log(SD)) %>%
+  ggplot() +
+  geom_density(aes(x=log_SD, fill=label),alpha=0.6)
+
+p3 = image_binded %>% mutate(label = as.character(label)) %>%
+  ggplot() +
+  geom_density(aes(x=NDAI, fill=label),alpha=0.6)
+
+p4 = image_binded %>% mutate(label = as.character(label)) %>%
+  ggplot() +
+  geom_density(aes(x=CORR, fill=label),alpha=0.6)
+
+p5 = image_binded %>% mutate(label = as.character(label)) %>%
+  ggplot() +
+  geom_density(aes(x=DF, fill=label),alpha=0.6)
+
+p6 = image_binded %>% mutate(label = as.character(label)) %>%
+  ggplot() +
+  geom_density(aes(x=CF, fill=label),alpha=0.6)
+
+p7 = image_binded %>% mutate(label = as.character(label)) %>%
+  ggplot() +
+  geom_density(aes(x=BF, fill=label),alpha=0.6)
+
+p8 = image_binded %>% mutate(label = as.character(label)) %>%
+  ggplot() +
+  geom_density(aes(x=AF, fill=label),alpha=0.6)
+
+p9 = image_binded %>% mutate(label = as.character(label)) %>%
+  ggplot() +
+  geom_density(aes(x=AN, fill=label),alpha=0.6)
+
+p1+p2+p3+p4
+
+p5+p6+p7+p8+p9
+```
+For the three essential engineered features (SD,NDAI,CORR): samples labelled "no cloud" typically have lower SD, NDAI and CORR. 
+
+For the five radience features: samples labelled "no cloud" typically have two peaks, and are more tightly distributed.
+samples labelled "cloud" are more sparsely distributed and negatively skewed. 
+
+
+## Question 2
+
+### (a)
+Ideally, we want our training and validation sets to be as different as possible since the real pictures can be really heterogeneous. If we just use random number generator to specify the samples that should be thrown to the training and validation set respectively, the training "image" and validation "image" will intersect with each other severely. High degree of intersection leads to similarity between training and validation images because samples that are near to each other tend to have same labels. In that case, the validation error is not a good proxy for testing error, and thus testing error will possibly be much higher than validation error when we apply the classification model on a new image.
+
+To take the fact that data is not i.i.d. into account, we would like to split the image into several "blocks" that are treated as sub-images, such that each block only borders other blocks at the boundary. This data splitting rule significantly reduces the similarity between training set and validation set as well as the testing set. In the meantime, we want each sub-image contains fair amount of clouds and surfaces to achieve better performances. Here, we introduce two approaches to create the blocks.
+
+The first one is imspired by the nature of K-means clustering. 
+
+```{r}
+km.out1.bad <- kmeans(image1%>%filter(label!=0)%>%.[c(4,5,6)],5) # bad result
+km.out1.good <- kmeans(image1%>%filter(label!=0)%>%.[c(1,2)],5)
+km.out2 <- kmeans(image2[-c(1,2,3)],5)
+km.out3 <- kmeans(image3[-c(1,2,3)],5)
+```
+
+```{r}
+image1 %>%
+  filter(label!=0) %>%
+  mutate(class=km.out1.good$cluster) %>%
+  ggplot(aes(x,y)) +
+  geom_raster(aes(fill=class),alpha=0.8) +
+  scale_fill_gradientn(colours = c('red','green','blue','yellow','purple'))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
