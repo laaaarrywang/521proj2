@@ -126,7 +126,7 @@ Ideally, we want our training and validation sets to be as different as possible
 
 To take the fact that data is not i.i.d. into account, we would like to split the image into several "blocks" that are treated as sub-images, such that each block only borders other blocks at the boundary. This data splitting rule significantly reduces the similarity between training set and validation set as well as the testing set. In the meantime, we want each sub-image contains fair size of clouds and surfaces to achieve better performances. Here, we introduce two approaches to create the blocks.
 
-The first one is imspired by the nature of K-means clustering. 
+The first one is inspired by the nature of K-means clustering. 
 
 ```{r}
 #From now on, we drop the samples that are not labelled.
