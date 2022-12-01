@@ -218,10 +218,87 @@ image.train1 <- rbind(image1.valid %>%
   mutate(class=km.out3$cluster)%>%filter(class!=5))
 
 ```
-The second one: vertical split.
+The second one: vertical split. For each image, we simply divide the image into 5 sub-images vertically, each of which contains one-fifth pixels of the whole image. Then we look into all the 15 sub-images and assign them into training, validation and testing set.
 
+```{r}
+quantile1 <- round(as.numeric(quantile(seq_len(nrow(image1.valid)),c(0,0.2,0.4,0.6,0.8,1))))
+quantile2 <- round(as.numeric(quantile(seq_len(nrow(image2.valid)),c(0,0.2,0.4,0.6,0.8,1))))
+quantile3 <- round(as.numeric(quantile(seq_len(nrow(image3.valid)),c(0,0.2,0.4,0.6,0.8,1))))
 
+label1 <- c(rep(1,quantile1[2]-quantile1[1]),
+            rep(2,quantile1[3]-quantile1[2]),
+            rep(3,quantile1[4]-quantile1[3]),
+            rep(4,quantile1[5]-quantile1[4]),
+            rep(5,quantile1[6]-quantile1[5]+1))
+label2 <- c(rep(1,quantile2[2]-quantile2[1]),
+            rep(2,quantile2[3]-quantile2[2]),
+            rep(3,quantile2[4]-quantile2[3]),
+            rep(4,quantile2[5]-quantile2[4]),
+            rep(5,quantile2[6]-quantile2[5]+1))
+label3 <- c(rep(1,quantile3[2]-quantile3[1]),
+            rep(2,quantile3[3]-quantile3[2]),
+            rep(3,quantile3[4]-quantile3[3]),
+            rep(4,quantile3[5]-quantile3[4]),
+            rep(5,quantile3[6]-quantile3[5]+1))
 
+rbind(image1.valid %>%
+  mutate(class=label1),
+  image2.valid %>%
+  mutate(class=label2),
+  image3.valid %>%
+  mutate(class=label3)) %>%
+  group_by(image,class,label) %>%
+  summarise(n=n())
+
+rbind(image1.valid %>%
+  mutate(class=label1),
+  image2.valid %>%
+  mutate(class=label2),
+  image3.valid %>%
+  mutate(class=label3)) %>%
+  group_by(label) %>%
+  summarise(n=n())
+
+```
+
+Validation: (1,2), (2,2), (2,5) -1/1=25214/19583
+Testing: (1,1), (2,3), (3,4) -1/1=24684/16928
+Training: 77182/44470
+
+```{r}
+image.val2 <- rbind(image1.valid %>%
+  mutate(class=label1)%>%filter(class==2),
+  image2.valid %>%
+  mutate(class=label2)%>%filter(class %in% c(2,5)))
+
+image.test2 <- rbind(image1.valid %>%
+  mutate(class=label1)%>%filter(class==1),
+  image2.valid %>%
+  mutate(class=label2)%>%filter(class==3),
+  image3.valid %>%
+  mutate(class=label3)%>%filter(class==4))
+
+image.train2 <- rbind(image1.valid %>%
+  mutate(class=label1)%>%filter(!(class %in% c(1,2))),
+  image2.valid %>%
+  mutate(class=label2)%>%filter(!(class %in% c(2,3,5))),
+  image3.valid %>%
+  mutate(class=label3)%>%filter(class!=4))
+
+```
+
+### (b)
+
+```{r}
+mean(image.val1$label==rep(-1,nrow(image.val1)))
+mean(image.val2$label==rep(-1,nrow(image.val2)))
+mean(image.test1$label==rep(-1,nrow(image.test1)))
+mean(image.test2$label==rep(-1,nrow(image.test2)))
+```
+
+Accuracy is around 60%. It is trivial that this classifier has a high accuracy when there is almost no cloud in the image.
+
+### (c)
 
 
 
