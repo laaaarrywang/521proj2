@@ -6,7 +6,7 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,cache=T)
 library(tidyverse)
 library(ggplot2)
 library(GGally)
@@ -124,28 +124,101 @@ samples labelled "cloud" are more sparsely distributed and negatively skewed.
 ### (a)
 Ideally, we want our training and validation sets to be as different as possible since the real pictures can be really heterogeneous. If we just use random number generator to specify the samples that should be thrown to the training and validation set respectively, the training "image" and validation "image" will intersect with each other severely. High degree of intersection leads to similarity between training and validation images because samples that are near to each other tend to have same labels. In that case, the validation error is not a good proxy for testing error, and thus testing error will possibly be much higher than validation error when we apply the classification model on a new image.
 
-To take the fact that data is not i.i.d. into account, we would like to split the image into several "blocks" that are treated as sub-images, such that each block only borders other blocks at the boundary. This data splitting rule significantly reduces the similarity between training set and validation set as well as the testing set. In the meantime, we want each sub-image contains fair amount of clouds and surfaces to achieve better performances. Here, we introduce two approaches to create the blocks.
+To take the fact that data is not i.i.d. into account, we would like to split the image into several "blocks" that are treated as sub-images, such that each block only borders other blocks at the boundary. This data splitting rule significantly reduces the similarity between training set and validation set as well as the testing set. In the meantime, we want each sub-image contains fair size of clouds and surfaces to achieve better performances. Here, we introduce two approaches to create the blocks.
 
 The first one is imspired by the nature of K-means clustering. 
 
 ```{r}
-km.out1.bad <- kmeans(image1%>%filter(label!=0)%>%.[c(4,5,6)],5) # bad result
-km.out1.good <- kmeans(image1%>%filter(label!=0)%>%.[c(1,2)],5)
-km.out2 <- kmeans(image2[-c(1,2,3)],5)
-km.out3 <- kmeans(image3[-c(1,2,3)],5)
+#From now on, we drop the samples that are not labelled.
+image1.valid <- image1%>%filter(label!=0)%>%mutate(image=1)
+image2.valid <- image2%>%filter(label!=0)%>%mutate(image=2)
+image3.valid <- image3%>%filter(label!=0)%>%mutate(image=3)
+```
+
+
+```{r}
+set.seed(1223)
+km.out1.bad <- kmeans(image1.valid%>%.[c(4,5,6)],5) # bad result
+km.out1 <- kmeans(image1.valid%>%.[c(1,2)],5) # good result, hence we use x,y label to split the data
+km.out2 <- kmeans(image2.valid[c(1,2)],5)
+km.out3 <- kmeans(image3.valid[c(1,2)],5)
 ```
 
 ```{r}
-image1 %>%
-  filter(label!=0) %>%
-  mutate(class=km.out1.good$cluster) %>%
+# bad data split
+image1.valid %>%
+  mutate(class=km.out1.bad$cluster) %>%
   ggplot(aes(x,y)) +
   geom_raster(aes(fill=class),alpha=0.8) +
   scale_fill_gradientn(colours = c('red','green','blue','yellow','purple'))
+
+# good data split
+p21 <- image1.valid %>%
+  mutate(class=km.out1$cluster) %>%
+  ggplot(aes(x,y)) +
+  geom_raster(aes(fill=class),alpha=0.8) +
+  scale_fill_gradientn(colours = c('red','green','blue','yellow','purple'))
+
+p22 <- image2.valid %>%
+  mutate(class=km.out2$cluster) %>%
+  ggplot(aes(x,y)) +
+  geom_raster(aes(fill=class),alpha=0.8) +
+  scale_fill_gradientn(colours = c('red','green','blue','yellow','purple'))
+
+p23 <- image3.valid %>%
+  mutate(class=km.out3$cluster) %>%
+  ggplot(aes(x,y)) +
+  geom_raster(aes(fill=class),alpha=0.8) +
+  scale_fill_gradientn(colours = c('red','green','blue','yellow','purple'))
+
+p21+p22+p23
+```
+Remember, we want each sub-image contains fair amount of clouds and surfaces.
+
+3 images * 5 classes/image = 15 classes. We first randomly split train-val-test at a 9-3-3 ratio.
+
+Some statistics: 200000 approx. valid data: 80000 with label 1 and 120000 with label -1. 
+Ideally, 120000 training: 50000 with 1 and 70000 with label -1
+          40000 val: 16000 with label 1 and 2400 with label -1
+          40000 test: 16000 with label 1 and 2400 with label -1
+```{r}
+rbind(image1.valid %>%
+  mutate(class=km.out1$cluster),
+  image2.valid %>%
+  mutate(class=km.out2$cluster),
+  image3.valid %>%
+  mutate(class=km.out3$cluster)) %>%
+  group_by(image,class,label) %>%
+  summarise(n=n())
+
 ```
 
+Validation: (1,3), (2,1), (2,5) -1/1=28514/14740
+Testing: (1,1), (2,3), (3,5) -1/1=26568/15676
+Training: 71998/50565
 
+```{r}
+image.val1 <- rbind(image1.valid %>%
+  mutate(class=km.out1$cluster)%>%filter(class==3),
+  image2.valid %>%
+  mutate(class=km.out2$cluster)%>%filter(class %in% c(1,5)))
 
+image.test1 <- rbind(image1.valid %>%
+  mutate(class=km.out1$cluster)%>%filter(class==1),
+  image2.valid %>%
+  mutate(class=km.out2$cluster)%>%filter(class==3),
+  image3.valid %>%
+  mutate(class=km.out3$cluster)%>%filter(class==5))
+
+image.train1 <- rbind(image1.valid %>%
+  mutate(class=km.out1$cluster)%>%filter(!(class %in% c(1,3))),
+  image2.valid %>%
+  mutate(class=km.out2$cluster)%>%filter(!(class %in% c(1,3,5))),
+  image3.valid %>%
+  mutate(class=km.out3$cluster)%>%filter(class!=5))
+
+```
+The second one: vertical split.
 
 
 
