@@ -331,14 +331,14 @@ for (i in seq(4,11,1)){
   min.max <- as.numeric(quantile(image1.valid[,i],c(0,1))) # return min and max of a feature
   
   differences <- c(differences,
-                   min(
+                   max(
                      max(sapply(seq(min.max[1],min.max[2],length.out=1000),
                                 detect_difference,
                                 v1=image1.valid%>%filter(label==-1)%>%.[i]%>%unlist(),
                                 v2=image1.valid%>%filter(label==1)%>%.[i]%>%unlist())),
                      max(sapply(seq(min.max[1],min.max[2],length.out=1000),
                                 detect_difference,
-                                v1=image1.valid%>%filter(label==11)%>%.[i]%>%unlist(),
+                                v1=image1.valid%>%filter(label==1)%>%.[i]%>%unlist(),
                                 v2=image1.valid%>%filter(label==-1)%>%.[i]%>%unlist()))
                      )
                    )
