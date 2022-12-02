@@ -143,7 +143,7 @@ samples labelled "cloud" are more sparsely distributed and negatively skewed. Th
 ### (a)
 Ideally, we want our training and validation sets to be as different as possible since the real pictures can be really heterogeneous. If we just use random number generator to specify the samples that should be thrown to the training and validation set respectively, the training "image" and validation "image" will intersect with each other severely. High degree of intersection leads to similarity between training and validation images because samples that are near to each other tend to have same labels. In that case, the validation error is not a good proxy for testing error, and thus testing error will possibly be much higher than validation error when we apply the classification model on a new image.
 
-To take the fact that data is not i.i.d. into account, we would like to split the image into several "blocks" that are treated as sub-images, such that each block only borders other blocks at the boundary. This data splitting rule significantly reduces the similarity between training set and validation set as well as the testing set. In the meantime, we want each sub-image contains fair size of clouds and surfaces to achieve better performances. Here, we introduce two approaches to create the blocks.
+To take the fact that data is not i.i.d. into account, we would like to split the image into several "blocks" that are treated as sub-images, such that each block only borders other blocks at the boundary. This data splitting rule significantly reduces the similarity between training set and validation set as well as the testing set. In the meantime, we want each sub-image contains fair amount of pixels of clouds and surfaces to achieve better performances. Here, we introduce two approaches to create the blocks.
 
 The first one is inspired by the nature of K-means clustering. 
 
@@ -192,7 +192,7 @@ p23 <- image3.valid %>%
 
 p21+p22+p23
 ```
-Remember, we want each sub-image contains fair amount of clouds and surfaces.
+Remember, we want each sub-image contains fair amount of pixels of clouds and surfaces.
 
 3 images * 5 classes/image = 15 classes. We first randomly split train-val-test at a 9-3-3 ratio.
 
