@@ -356,86 +356,69 @@ Therefore, the first three features incorporate more information.
 ```{r}
 # Write a generic cross validation (CV) function CVmaster in R that takes a generic classifier, training features, training labels, number of folds K and a loss function (at least classification accuracy should be there) as inputs and outputs the K-fold CV loss on the training set. Please remember to put it in your github folder in Section 5.
 
-# combine all images
-image1 = image1 %>% mutate(ID = 1)
-image2 = image2 %>% mutate(ID = 2)
-image3 = image3 %>% mutate(ID = 3)
-image = rbind(image1, image2, image3)
-
-# separate the features to three images based on image ID
-separateImage = function(data){
-  # extract ID
-  ID = data %>% distinct(ID)
-  image = list()
-  for (i in seq_along(ID)){
-    image[[i]] = data %>% select(ID == i)
-  }
-  return (image)
-}
-
 # split method 1: Kmeans
-folds.Kmean = function(features, labels, K){
-  # this is stupid
-  data = cbind(features, labels)
-  
-  # get the list of image
-  image = separateImage(data)
-  
-  # divide to K components for each image
-  # data with fold (class) indicator
-  fold = data.frame()
-  for (i in image){
-    km.out = kmeans(i[c("y", "x")], K)$cluster
-    fold = rbind(fold, i %>% mutate(class = km.out))
-  }
-  
-  # return a list of K folds
-  return (fold)
+folds.Kmean = function(coordinate, K){
+  return(kmeans(coordinate, K)$cluster)
 }
 
-# split method 2: vertical split
-folds.Vsplit = function(features, labels, K){
-  # again, this is stupid
-  data = cbind(features, labels)
-  
-  # get the list of image
-  image = separateImage(data)
-  
-  # divide to K components for each image
-  # data with fold (class) indicator
-  fold = data.frame()
-  for (i in image){
-    quantile = round(as.numeric(quantile(seq_len(nrow(i)), seq(0, 1, 1/K))))
-    classinfo = c()
-    for(k in 1:K){
-      if (k != K)
-        classinfo = c(classinfo, rep(k, quantile[k + 1] - quantile[k]))
-      else
-        classinfo = c(classinfo, rep(k, quantile[k + 1] - quantile[k] + 1))
-    }
-    fold = rbind(fold, cbind(i, class = classinfo))
-  }
-  
-  # return a list of K folds
-  return (fold)   
+# split method 2: 
+folds.Vsplit = function(coordinate, K){
+  # implicitly assumes that the x axis is sorted
+  quantile = round(as.numeric(quantile(seq_len(nrow(coordinate)), seq(0, 1, 1/K))))
+  class = c()
+  for (k in 1:K)
+    if (k != K)
+      class = c(class, rep(k, quantile[k + 1] - quantile[k]))
+  else
+    class = c(class, rep(k, quantile[k + 1] - quantile[k] + 1))
+  return (class)
 }
 
 #' takes a generic classifier, training features, training labels, number of folds K and a loss function and output the K-fold CV loss on the training set
 #' 
 #' @param classifier 
-#' @param features A data frame containing of all the features (with column names). Needs to include image ID (1, 2, 3) as identifier and x, y axes.
+#' @param features A data frame containing of all the features (with column names). 
 #' @param labels A vector of labels. One-to-one correspondence with the features
 #' @param K An integer. The number of folds.
-#' @param loss A function that takes two inputs of data frames/vectors (classified labels and predicted labels)
+#' @param loss_method A function that takes two inputs of data frames/vectors (classified labels and predicted labels)
+#' @param split_method method used to split the data set (Kmeans or vertical split)
+#' @param coordinate The coordinate of the input data, corresponds to features and labels
 #' @returns A number: the K-fold CV loss on the training set
 #' @examples
 #' CVmaster(linear_reg, image.features, image.labels, 5, roc_auc)
-CVmaster = function(classifier, features, labels, K, loss, split_function){
+CVmaster = function(classifier, features, labels, K, loss_method, split_method, coordinate){
   
   # get K folds
-  folds = split_function(features, labels, K)
+  fold = split_function(coordinate, K)
+  
+  # record loss
+  loss = c()
+  
+  # for each k
+  for(k in 1:K){
+    # separate into training and validation
+    position = which(fold == k)
+    
+    # features
+    features.train = features[position]
+    features.validate = features[position]
+    
+    # labels
+    labels.train = labels[position]
+    labels.validate = labels[position]
+    
+    # training
+    fit = classifier(features.train, labels.train, ...)
+    
+    # predicting
+    labels.predicted = something(features.validate, fit) ### TBD by the exact function
+    
+    loss = c(loss, loss_method(labels.validate, labels.predicted))
+    
+  }
   
   # return the K-fold CV loss on the training set
+  return (mean(loss))
 }
 ```
 
