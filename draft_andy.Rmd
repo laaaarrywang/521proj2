@@ -63,7 +63,7 @@ folds.Vsplit = function(coordinate, K){
 ```{r}
 set.seed(1223)
 # split testing - 20%
-coordinate = image.valid %>% select(x, y)
+coordinate = image.valid %>% dplyr::select(x, y)
 class.kmeans = folds.Kmean(coordinate, 5)
 class.vsplit = folds.Vsplit(coordinate, 5)
 # the fifth one as testing
@@ -72,6 +72,22 @@ test.vsplit = image.valid[which(class.vsplit == 5), ]
 # train
 train.kmeans = image.valid[which(class.kmeans != 5), ]
 train.vsplit = image.valid[which(class.vsplit != 5), ]
+```
+
+```{r}
+# split training set according to features, labels and parameters
+train.kmeans.features = train.kmeans %>% dplyr::select(-x, -y, -label, -image)
+train.kmeans.labels = train.kmeans %>% dplyr::pull(label)
+train.kmeans.coordinates = train.kmeans %>% dplyr::select(x, y)
+
+train.vsplit.features = train.vsplit %>% dplyr::select(-x, -y, -label, -image)
+train.vsplit.labels = train.vsplit %>% dplyr::pull(label)
+train.vsplit.coordinates = train.vsplit %>% dplyr::select(x, y)
+```
+
+```{r}
+loss.mean = function(label, predicted)
+  return (mean(label != predicted))
 ```
 
 ```{r}
@@ -87,7 +103,7 @@ train.vsplit = image.valid[which(class.vsplit != 5), ]
 #' @returns A number: the K-fold CV loss on the training set
 #' @examples
 #' CVmaster(linear_reg, image.features, image.labels, 5, roc_auc)
-CVmaster = function(classifier, features, labels, K = 5, loss_method = NULL, split_method, coordinate){
+CVmaster = function(classifier, features, labels, K = 5, loss_method, split_method, coordinate){
   
   # get K folds
   fold = split_method(coordinate, K)
@@ -110,28 +126,25 @@ CVmaster = function(classifier, features, labels, K = 5, loss_method = NULL, spl
     
     # training
     if(classifier == "LDA"){
-      LDA = lda(labels.train ~ features.train)
+      LDA = lda(labels.train ~ ., data = features.train)
       predict_LDA = predict(LDA, features.validate)
-      loss = c(loss, mean(predict_LDA == labels.validate))
+      loss = c(loss, loss_method(predict_LDA, labels.validate))
     }
     else if(classifier == "QDA"){
-      QDA = qda(labels.train ~ features.train)
+      QDA = qda(labels.train ~ ., data = features.train)
       predict_QDA = predict(QDA, features.validate)
-      loss = c(loss, mean(predict_QDA == labels.validate))
+      loss = c(loss, loss_method(predict_LDA, labels.validate))
     }
-    
-    # fit = classifier(features.train, labels.train, ...)
-    # 
-    # # predicting
-    # labels.predicted = something(features.validate, fit) ### TBD by the exact function
-    # 
-    # loss = c(loss, loss_method(labels.validate, labels.predicted))
     
   }
   
   # return the K-fold CV loss on the training set
   return (loss)
 }
+```
+
+```{r}
+CVmaster("LDA", train.kmeans.features, train.kmeans.labels, K = 5, loss.mean, folds.Kmean, train.kmeans.coordinates)
 ```
 
 
