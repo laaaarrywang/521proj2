@@ -400,8 +400,8 @@ CVmaster = function(classifier, features, labels, K, loss_method, split_method, 
     position = which(fold == k)
     
     # features
-    features.train = features[position]
-    features.validate = features[position]
+    features.train = features[position, ]
+    features.validate = features[position, ]
     
     # labels
     labels.train = labels[position]

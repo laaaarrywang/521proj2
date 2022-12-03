@@ -117,8 +117,8 @@ CVmaster = function(classifier, features, labels, K = 5, loss_method, split_meth
     position = which(fold == k)
     
     # features
-    features.train = features[position]
-    features.validate = features[position]
+    features.train = features[position, ]
+    features.validate = features[position, ]
     
     # labels
     labels.train = labels[position]
@@ -127,13 +127,13 @@ CVmaster = function(classifier, features, labels, K = 5, loss_method, split_meth
     # training
     if(classifier == "LDA"){
       LDA = lda(labels.train ~ ., data = features.train)
-      predict_LDA = predict(LDA, features.validate)
+      predict_LDA = predict(LDA, features.validate)$class
       loss = c(loss, loss_method(predict_LDA, labels.validate))
     }
     else if(classifier == "QDA"){
       QDA = qda(labels.train ~ ., data = features.train)
-      predict_QDA = predict(QDA, features.validate)
-      loss = c(loss, loss_method(predict_LDA, labels.validate))
+      predict_QDA = predict(QDA, features.validate)$class
+      loss = c(loss, loss_method(predict_QDA, labels.validate))
     }
     
   }
@@ -145,6 +145,7 @@ CVmaster = function(classifier, features, labels, K = 5, loss_method, split_meth
 
 ```{r}
 CVmaster("LDA", train.kmeans.features, train.kmeans.labels, K = 5, loss.mean, folds.Kmean, train.kmeans.coordinates)
+CVmaster("QDA", train.kmeans.features, train.kmeans.labels, K = 5, loss.mean, folds.Kmean, train.kmeans.coordinates)
 ```
 
 
