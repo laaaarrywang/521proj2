@@ -357,14 +357,14 @@ Therefore, the first three features incorporate more information.
 # Write a generic cross validation (CV) function CVmaster in R that takes a generic classifier, training features, training labels, number of folds K and a loss function (at least classification accuracy should be there) as inputs and outputs the K-fold CV loss on the training set. Please remember to put it in your github folder in Section 5.
 
 # split method 1: Kmeans
-folds.Kmean = function(coordinate, K){
-  return(kmeans(coordinate, K)$cluster)
+folds.Kmean = function(coordinates, K){
+  return(kmeans(coordinates, K)$cluster)
 }
 
 # split method 2: 
-folds.Vsplit = function(coordinate, K){
+folds.Vsplit = function(coordinates, K){
   # implicitly assumes that the x axis is sorted
-  quantile = round(as.numeric(quantile(seq_len(nrow(coordinate)), seq(0, 1, 1/K))))
+  quantile = round(as.numeric(quantile(seq_len(nrow(coordinates)), seq(0, 1, 1/K))))
   class = c()
   for (k in 1:K)
     if (k != K)
@@ -386,10 +386,10 @@ folds.Vsplit = function(coordinate, K){
 #' @returns A number: the K-fold CV loss on the training set
 #' @examples
 #' CVmaster(linear_reg, image.features, image.labels, 5, roc_auc)
-CVmaster = function(classifier, features, labels, K, loss_method, split_method, coordinate){
+CVmaster = function(classifier, features, labels, K, loss_method, split_method, coordinates){
   
   # get K folds
-  fold = split_method(coordinate, K)
+  fold = split_method(coordinates, K)
   
   # record loss
   loss = c()
@@ -418,7 +418,7 @@ CVmaster = function(classifier, features, labels, K, loss_method, split_method, 
   }
   
   # return the K-fold CV loss on the training set
-  return (mean(loss))
+  return (loss)
 }
 ```
 
