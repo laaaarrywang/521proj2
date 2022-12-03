@@ -1,0 +1,22 @@
+---
+title: "draft_larry"
+author: "Linxuan Wang, Jingan Zhou"
+date: "2022-12-03"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,cache=T)
+library(tidyverse)
+library(ggplot2)
+library(GGally)
+library(patchwork)
+library(stats)
+library(tidymodels)
+```
+
+```{r}
+set.seed(1223)
+
+```
+
