@@ -1,0 +1,171 @@
+---
+title: "Andy's Draft"
+author: "Andy"
+date: "12/03/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,cache=T)
+library(tidyverse)
+library(ggplot2)
+library(GGally)
+library(patchwork)
+library(stats)
+library(tidymodels)
+library(rsample)
+library(MASS)
+```
+
+## Data loading
+```{r, results='hide'}
+image1 = read.table("image_data/imagem1.txt", header=F)
+colnames(image1) = c("y","x","label","NDAI","SD","CORR","DF","CF","BF","AF","AN")
+image2 = read.table("image_data/imagem2.txt", header=F)
+colnames(image2) = c("y","x","label","NDAI","SD","CORR","DF","CF","BF","AF","AN")
+image3 = read.table("image_data/imagem3.txt", header=F)
+colnames(image3) = c("y","x","label","NDAI","SD","CORR","DF","CF","BF","AF","AN")
+```
+
+```{r}
+#From now on, we drop the samples that are not labelled.
+image.valid = rbind(image1%>%filter(label!=0)%>%mutate(image=1),
+                    image2%>%filter(label!=0)%>%mutate(image=2),
+                    image3%>%filter(label!=0)%>%mutate(image=3)) %>%
+  arrange(x)
+```
+
+### (d)
+
+```{r}
+# Write a generic cross validation (CV) function CVmaster in R that takes a generic classifier, training features, training labels, number of folds K and a loss function (at least classification accuracy should be there) as inputs and outputs the K-fold CV loss on the training set. Please remember to put it in your github folder in Section 5.
+
+# split method 1: Kmeans
+folds.Kmean = function(coordinate, K){
+  return(kmeans(coordinate, K)$cluster)
+}
+
+# split method 2: 
+folds.Vsplit = function(coordinate, K){
+  # implicitly assumes that the x axis is sorted
+  quantile = round(as.numeric(quantile(seq_len(nrow(coordinate)), seq(0, 1, 1/K))))
+  class = c()
+  for (k in 1:K)
+    if (k != K)
+      class = c(class, rep(k, quantile[k + 1] - quantile[k]))
+  else
+    class = c(class, rep(k, quantile[k + 1] - quantile[k] + 1))
+  return (class)
+}
+```
+
+
+```{r}
+set.seed(1223)
+# split testing - 20%
+coordinate = image.valid %>% select(x, y)
+class.kmeans = folds.Kmean(coordinate, 5)
+class.vsplit = folds.Vsplit(coordinate, 5)
+# the fifth one as testing
+test.kmeans = image.valid[which(class.kmeans == 5), ]
+test.vsplit = image.valid[which(class.vsplit == 5), ]
+# train
+train.kmeans = image.valid[which(class.kmeans != 5), ]
+train.vsplit = image.valid[which(class.vsplit != 5), ]
+```
+
+```{r}
+#' takes a generic classifier, training features, training labels, number of folds K and a loss function and output the K-fold CV loss on the training set
+#' 
+#' @param classifier 
+#' @param features A data frame containing of all the features (with column names). 
+#' @param labels A vector of labels. One-to-one correspondence with the features
+#' @param K An integer. The number of folds.
+#' @param loss_method A function that takes two inputs of data frames/vectors (classified labels and predicted labels)
+#' @param split_method method used to split the data set (Kmeans or vertical split)
+#' @param coordinate The coordinate of the input data, corresponds to features and labels
+#' @returns A number: the K-fold CV loss on the training set
+#' @examples
+#' CVmaster(linear_reg, image.features, image.labels, 5, roc_auc)
+CVmaster = function(classifier, features, labels, K = 5, loss_method = NULL, split_method, coordinate){
+  
+  # get K folds
+  fold = split_method(coordinate, K)
+  
+  # record loss
+  loss = c()
+  
+  # for each k
+  for(k in 1:K){
+    # separate into training and validation
+    position = which(fold == k)
+    
+    # features
+    features.train = features[position]
+    features.validate = features[position]
+    
+    # labels
+    labels.train = labels[position]
+    labels.validate = labels[position]
+    
+    # training
+    if(classifier == "LDA"){
+      LDA = lda(labels.train ~ features.train)
+      predict_LDA = predict(LDA, features.validate)
+      loss = c(loss, mean(predict_LDA == labels.validate))
+    }
+    else if(classifier == "QDA"){
+      QDA = qda(labels.train ~ features.train)
+      predict_QDA = predict(QDA, features.validate)
+      loss = c(loss, mean(predict_QDA == labels.validate))
+    }
+    
+    # fit = classifier(features.train, labels.train, ...)
+    # 
+    # # predicting
+    # labels.predicted = something(features.validate, fit) ### TBD by the exact function
+    # 
+    # loss = c(loss, loss_method(labels.validate, labels.predicted))
+    
+  }
+  
+  # return the K-fold CV loss on the training set
+  return (loss)
+}
+```
+
+
+<!-- Rubbish attempts for tidymodel - decide not to use -->
+<!-- ```{r} -->
+<!-- temp = image1.valid %>% -->
+<!--   filter(x < quantile(image1.valid$x, 0.01)) -->
+<!-- temp2 = image1.valid %>% -->
+<!--   filter(x < quantile(image1.valid$x, 0.02)) %>% -->
+<!--   filter(x > quantile(image1.valid$x, 0.01)) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- ind = list(analysis = seq(nrow(temp)), assessment = nrow(temp) + seq(nrow(temp2))) -->
+<!-- b = make_splits(ind, rbind(temp, temp2)) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- new_rset(b, id = as_tibble(data.frame(id = c("Fold1", "Fold2")))) -->
+<!-- ``` -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
