@@ -389,7 +389,7 @@ folds.Vsplit = function(coordinate, K){
 CVmaster = function(classifier, features, labels, K, loss_method, split_method, coordinate){
   
   # get K folds
-  fold = split_function(coordinate, K)
+  fold = split_method(coordinate, K)
   
   # record loss
   loss = c()
