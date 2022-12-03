@@ -15,6 +15,7 @@ library(stats)
 library(tidymodels)
 library(rsample)
 library(MASS)
+library(xgboost)
 ```
 
 ## Data loading
@@ -103,7 +104,7 @@ loss.mean = function(label, predicted)
 #' @returns A number: the K-fold CV loss on the training set
 #' @examples
 #' CVmaster(linear_reg, image.features, image.labels, 5, roc_auc)
-CVmaster = function(classifier, features, labels, K = 5, loss_method, split_method, coordinate){
+CVmaster = function(classifier, features, labels, K = 5, loss_method, split_method, coordinate, ...){
   
   # get K folds
   fold = split_method(coordinate, K)
@@ -135,6 +136,16 @@ CVmaster = function(classifier, features, labels, K = 5, loss_method, split_meth
       predict_QDA = predict(QDA, features.validate)$class
       loss = c(loss, loss_method(predict_QDA, labels.validate))
     }
+    else if(classifier == "xgboost"){
+      # currently not working
+      labels.train = replace(labels.train, labels.train == -1, 0)
+      labels.validate = replace(labels.validate, labels.validate == -1, 0)
+      dtrain = xgb.DMatrix(data = as.matrix(features.train), label = labels.train)
+      dvalidate = xgb.DMatrix(data = as.matrix(features.validate), label = labels.validate)
+      XGB = xgboost(data = dtrain, ...)
+      predict_XGB = predict(XGB, features.validate)
+      loss = c(loss, loss_method(predict_XGB, labels.validate))
+    }
     
   }
   
@@ -144,10 +155,30 @@ CVmaster = function(classifier, features, labels, K = 5, loss_method, split_meth
 ```
 
 ```{r}
+set.seed(1223)
 CVmaster("LDA", train.kmeans.features, train.kmeans.labels, K = 5, loss.mean, folds.Kmean, train.kmeans.coordinates)
 CVmaster("QDA", train.kmeans.features, train.kmeans.labels, K = 5, loss.mean, folds.Kmean, train.kmeans.coordinates)
 ```
 
+```{r}
+CVmaster("xgboost", train.kmeans.features, train.kmeans.labels, K = 5, loss.mean, folds.Kmean, train.kmeans.coordinates, max.depth = 2, eta = 1, nthread = 2, nrounds = 2, objective = "binary:logistic", verbose = 0)
+```
+
+```{r}
+train.kmeans.labels.XGB = replace(train.kmeans.labels, train.kmeans.labels == -1, 0)
+dtrain = xgb.DMatrix(data = as.matrix(train.kmeans.features), label = train.kmeans.labels.XGB)
+XGB = xgboost(data = dtrain, max.depth = 2, eta = 1, nthread = 2, nrounds = 2, objective = "binary:logistic", verbose = 0)
+
+test.kmeans.features = test.kmeans %>% dplyr::select(-x, -y, -image, -label)
+test.kmeans.labels = test.kmeans %>% dplyr::pull(label)
+test.kmeans.labels.XGB = replace(test.kmeans.labels, test.kmeans.labels == -1, 0)
+predicted_XGB = predict(XGB, as.matrix(test.kmeans.features))
+```
+
+```{r}
+predicted_XGB = as.numeric(predicted_XGB > 0.5)
+mean(predicted_XGB != test.kmeans.labels.XGB)
+```
 
 <!-- Rubbish attempts for tidymodel - decide not to use -->
 <!-- ```{r} -->
