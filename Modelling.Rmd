@@ -1,0 +1,146 @@
+## Question 3
+
+### training/testing split
+
+```{r, test-train splitting - kmeans}
+set.seed(1223)
+# split testing - 20%
+# kmeans method
+coordinates = image.valid %>% dplyr::select(x, y)
+
+class.kmeans = folds.Kmean(coordinates, 5)
+
+# the second one as testing - with the most balanced proportion
+test.kmeans = image.valid[which(class.kmeans == 2), ]
+# train
+train.kmeans = image.valid[which(class.kmeans != 2), ]
+
+# prepare features, labels and coordinates
+train.kmeans.features = train.kmeans %>% dplyr::select(-x, -y, -label, -image)
+train.kmeans.labels = train.kmeans %>% dplyr::pull(label)
+train.kmeans.coordinates = train.kmeans %>% dplyr::select(x, y)
+
+# testing
+test.kmeans.features = test.kmeans %>% dplyr::select(-x, -y, -label, -image)
+test.kmeans.labels = test.kmeans %>% dplyr::pull(label)
+test.kmeans.coordinates = test.kmeans %>% dplyr::select(x, y)
+```
+
+```{r, test-train splitting - vsplit}
+set.seed(1223)
+# split testing - 20%
+# vsplit method
+
+class.vsplit = folds.Vsplit(coordinates, 5)
+
+# the fourth one as testing - with the most balanced proportion
+test.vsplit = image.valid[which(class.vsplit == 4), ]
+# train
+train.vsplit = image.valid[which(class.vsplit != 4), ]
+
+# prepare features, labels and coordinates
+train.vsplit.features = train.vsplit %>% dplyr::select(-x, -y, -label, -image)
+train.vsplit.labels = train.vsplit %>% dplyr::pull(label)
+train.vsplit.coordinates = train.vsplit %>% dplyr::select(x, y)
+
+# test
+test.vsplit.features = test.vsplit %>% dplyr::select(-x, -y, -label, -image)
+test.vsplit.labels = test.vsplit %>% dplyr::pull(label)
+test.vsplit.coordinates = test.vsplit %>% dplyr::select(x, y)
+```
+
+### Modelling
+
+```{r}
+# testing random forest
+results.rf <- CVmaster(classifier = "randomForest", 
+                       test.kmeans.features, 
+                       test.kmeans.labels, 
+                       K = 10, 
+                       loss_method = loss.mean, 
+                       split_method = folds.Kmean, 
+                       train.kmeans.coordinates, 
+                       tree.num = seq(300,350,50), 
+                       tree.depth = seq(5,6,1))
+
+# probabilistic prediction, need cutoff values to complete classification
+fit.rf <- ranger::ranger(label~NDAI+SD+CORR+DF+CF+BF+AF+AN,
+            data=train.vsplit,
+            num.trees =results.rf$tree_num,
+            max.depth = results.rf$tree_depth,
+            num.threads = parallel::detectCores()-1,
+            classification = TRUE,
+            probability = TRUE,
+            seed=1223)
+
+
+# store predicted probabilities of labels equal to 1
+prob.pred.rf <- predict(fit.rf,data=test.vsplit)$predictions[,1]
+
+# ROC curve
+# the threshold with highest sensitivity+specificity is printed in the plot
+plot.roc(test.vsplit$label,prob.pred.rf,percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T) 
+ 
+```
+
+```{r}
+# testing logistic
+test.vsplit$label[test.vsplit$label == -1] = 0
+fit.logistic <- glm(label~NDAI+SD+CORR+DF+CF+BF+AF+AN,family = "binomial",data = test.vsplit)
+prob.pred.logis <- predict(fit.logistic,test.vsplit,type = "response")
+
+plot.roc(test.vsplit$label,prob.pred.logis,percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T,add=T)
+```
+
+```{r}
+# ROC curves
+roc.obj.rf <- roc(test.vsplit$label, prob.pred.rf)
+roc.obj.logis <- roc(test.vsplit$label, prob.pred.logis)
+
+coords(roc.obj.logis, "best", ret=c("threshold", "specificity", "sensitivity"))
+coords(roc.obj.rf, "best", ret=c("threshold", "specificity", "sensitivity"))
+  
+
+ggroc(list(logistic=roc.obj.logis,randomForest=roc.obj.rf)) +
+  geom_point(aes(x=0.9188396, y=0.9847082), colour="red") +
+  geom_point(aes(x=0.9107317, y=0.9719358), colour="blue") +
+  annotate("text", x=0.9188396, y=1, label = "0.3564",size=3,color='red') +
+  annotate("text", x=0.87, y=0.9719358, label = "0.3011",size=3,color='blue') +
+  labs(fill = "Dose (mg)")
+
+
+# another way to make roc curve
+# plot(roc.obj.rf,
+#      print.auc = TRUE,
+#      auc.polygon = TRUE,
+#      max.auc.polygon = TRUE,
+#      legacy.axes = TRUE,
+#      auc.polygon.col = "lightblue",
+#       print.thres = "best",
+#      print.auc.x = 0.4,
+#      print.auc.y = 0.2
+#      )
+# 
+# plot(roc.obj.logis,
+#      print.auc = TRUE,
+#      auc.polygon = TRUE,
+#      max.auc.polygon = TRUE,
+#      legacy.axes = TRUE,
+#      auc.polygon.col = "lightyellow",
+#       print.thres = "best",
+#      print.auc.x = 0.4,
+#      print.auc.y = 0.2,
+#      add=TRUE
+#      )
+
+```
+
+```{r}
+set.seed(1223)
+CVmaster("LDA", train.kmeans.features, train.kmeans.labels, K = 5, loss.mean, folds.Kmean, train.kmeans.coordinates)
+CVmaster("QDA", train.kmeans.features, train.kmeans.labels, K = 5, loss.mean, folds.Kmean, train.kmeans.coordinates)
+```
+
+
+
+

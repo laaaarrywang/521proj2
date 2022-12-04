@@ -1,0 +1,143 @@
+
+```{r Split Method}
+# split method 1: Kmeans
+folds.Kmean = function(coordinates, K){
+  return(kmeans(coordinates, K)$cluster)
+}
+
+# split method 2: 
+folds.Vsplit = function(coordinates, K){
+  # implicitly assumes that the x axis is sorted
+  quantile = round(as.numeric(quantile(seq_len(nrow(coordinates)), seq(0, 1, 1/K))))
+  class = c()
+  for (k in 1:K)
+    if (k != K)
+      class = c(class, rep(k, quantile[k + 1] - quantile[k]))
+  else
+    class = c(class, rep(k, quantile[k + 1] - quantile[k] + 1))
+  return (class)
+}
+```
+
+```{r, Loss Function}
+loss.mean = function(label, predicted){
+  return (mean(label != predicted))
+}
+```
+
+```{r, CVmaster}
+#' takes a generic classifier, training features, training labels, number of folds K and a loss function and output the K-fold CV loss on the training set
+#' 
+#' @param classifier 
+#' @param features A data frame containing of all the features (with column names). 
+#' @param labels A vector of labels. One-to-one correspondence with the features
+#' @param K An integer. The number of folds.
+#' @param loss_method A function that takes two inputs of data frames/vectors (classified labels and predicted labels)
+#' @param split_method method used to split the data set (Kmeans or vertical split)
+#' @param coordinate The coordinate of the input data, corresponds to features and labels
+#' @param tree.num a parameter used for random forest
+#' @param tree.depth a parameter used for random forest and xgboost
+#' @returns A number: the K-fold CV loss on the training set
+CVmaster = function(classifier, features, labels, K = 10, loss_method, split_method, coordinate, tree.num = seq(50,600,50), tree.depth = seq(3,20,1)){
+  # get K folds
+  fold = split_method(coordinate, K)
+  
+  # record loss
+  loss = c()
+  
+  # record loss for random forest, not used under other classifiers
+  loss.rf = array(rep(1, length(tree.num)*length(tree.depth)*K), dim=c(length(tree.num),length(tree.depth),K))
+  
+  # record for logistics regression to choose cutoff
+  cutoff = seq(0, 1, 1/100)
+  loss.log = array(rep(1, length(cutoff) * K), dim = c(length(cutoff), K))
+  
+  for(k in 1:K){
+    # separate into training and validation
+    position = which(fold == k)
+    
+    # features
+    features.train = features[-position,]
+    features.validate = features[position,]
+    
+    # labels
+    labels.train = labels[-position]
+    labels.validate = labels[position]
+    
+    # data for random forest training + logistics
+    data.train = cbind(features.train, label = labels.train)
+    data.val = cbind(features.validate, label = labels.validate)
+    
+    if (classifier == "randomForest"){
+      # parameter tuning
+      for (i in 1:length(tree.num)){
+        for (j in 1:length(tree.depth)){
+
+          # training
+          fit = ranger::ranger(label ~ NDAI+SD+CORR+DF+CF+BF+AF+AN,
+                        data=data.train,
+                        num.trees = tree.num[i],
+                        max.depth = tree.depth[j], 
+                        num.threads = parallel::detectCores()-1,
+                        classification = TRUE,
+                        seed=1223)
+          
+          # predicting
+          pred = predict(fit,data=data.val)
+          
+          #compute loss
+          loss.rf[i,j,k] = loss_method(data.val$label, pred$predictions)
+       }
+     }
+    }
+    
+    else if (classifier == "Logistic"){
+      # label = -1 --> label = 0
+      data.train$label[data.train$label == -1] = 0
+      data.val$label[data.val$label == -1] = 0
+      fit = glm(label ~ NDAI+SD+CORR+DF+CF+BF+AF+AN,family = "binomial", data = data.train)
+      predict_logistic = predict(fit, data.val, type = "response")
+      
+      predict_logistic = ifelse(predict_logistic > 0.5, 1, 0)
+      loss <- c(loss,loss_method(predict_logistic, data.val$label))
+      
+    } 
+    
+    else if(classifier == "LDA"){
+      LDA = lda(labels.train ~ ., data = features.train)
+      predict_LDA = predict(LDA, features.validate)$class
+      loss = c(loss, loss_method(predict_LDA, labels.validate))
+    }
+    
+    else if(classifier == "QDA"){
+      QDA = qda(labels.train ~ ., data = features.train)
+      predict_QDA = predict(QDA, features.validate)$class
+      loss = c(loss, loss_method(predict_QDA, labels.validate))
+    }
+    
+    else if(classifier == "xgboost"){
+      # need to modify
+      labels.train = replace(labels.train, labels.train == -1, 0)
+      labels.validate = replace(labels.validate, labels.validate == -1, 0)
+      dtrain = xgb.DMatrix(data = as.matrix(features.train), label = labels.train)
+      dvalidate = xgb.DMatrix(data = as.matrix(features.validate), label = labels.validate)
+      XGB = xgboost(data = dtrain, ...)
+      predict_XGB = predict(XGB, features.validate)
+      loss = c(loss, loss_method(predict_XGB, labels.validate))
+    }
+  }
+  
+  # find the best parameter for random forest
+  if (classifier == "randomForest"){
+    loss.RF = apply(loss.rf,c(1,2),mean)
+
+    # choose the best parameter
+    i = which(loss.RF == min(loss.RF), arr.ind = TRUE)[1]
+    j = which(loss.RF == min(loss.RF), arr.ind = TRUE)[2]
+    
+    return(list(cv_loss=loss.rf[i, j, ], tree_num=tree.num[i], tree_depth=tree.depth[j]))
+  }
+  
+  return (loss)
+}
+```

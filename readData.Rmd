@@ -1,0 +1,40 @@
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,cache=T)
+library(tidyverse)
+library(ggplot2)
+library(GGally)
+library(patchwork)
+library(stats)
+library(rsample)
+library(MASS)
+library(xgboost)
+library(pROC)
+library(ranger)
+```
+
+```{r, read image separately}
+image1 = read.table("image_data/imagem1.txt", header=F)
+colnames(image1) = c("y","x","label","NDAI","SD","CORR","DF","CF","BF","AF","AN")
+image2 = read.table("image_data/imagem2.txt", header=F)
+colnames(image2) = c("y","x","label","NDAI","SD","CORR","DF","CF","BF","AF","AN")
+image3 = read.table("image_data/imagem3.txt", header=F)
+colnames(image3) = c("y","x","label","NDAI","SD","CORR","DF","CF","BF","AF","AN")
+```
+
+```{r, keep pixels with expert labels}
+image1.valid <- image1%>%filter(label!=0) %>% mutate(image=1)
+image2.valid <- image2%>%filter(label!=0) %>% mutate(image=2)
+image3.valid <- image3%>%filter(label!=0) %>% mutate(image=3)
+```
+
+```{r, combined dataset}
+# with all the labels
+image_binded <- rbind(image1,image2,image3)
+# with only identified labels (1/-1)
+image.valid = rbind(image1.valid,
+                    image2.valid,
+                    image3.valid) %>%
+  arrange(x)
+```
+
