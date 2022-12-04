@@ -98,7 +98,12 @@ CVmaster = function(classifier, features, labels, K = 10, loss_method, split_met
       fit <- glm(label~NDAI+SD+CORR+DF+CF+BF+AF+AN,family = "binomial",data = data.train)
       predict_logistic <- predict(fit,data.val,type = "response")
       
-      predict_logistic <- ifelse(predict_logistic > 0.5, 1, 0)
+      # select cutoff value
+      roc.obj <- roc(data.val$label, predict_logistic)
+      cutoff <- as.numeric(coords(roc.obj, "best", ret=c("threshold")))
+      
+      # predict label
+      predict_logistic <- ifelse(predict_logistic > cutoff, 1, 0)
       
       loss <- c(loss,loss_method(predict_logistic, data.val$label))
     }
