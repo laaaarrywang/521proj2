@@ -10,13 +10,162 @@ knitr::opts_chunk$set(echo = TRUE,cache=T)
 library(tidyverse)
 library(ggplot2)
 library(GGally)
+library(pROC)
 library(patchwork)
 library(stats)
 library(tidymodels)
 ```
 
-```{r}
+```{r, test-train splitting}
 set.seed(1223)
+# split testing - 20%
+image.valid <- rbind(image1.valid,image2.valid,image3.valid)
+coordinate = image.valid %>% select(x, y)
+
+class.vsplit = folds.Vsplit(coordinate, 5)
+
+# the fourth one as testing
+test.vsplit = image.valid[which(class.vsplit == 4), ]
+# train
+train.vsplit = image.valid[which(class.vsplit != 4), ]
+
+# prepare features, labels and coordinates
+features = train.vsplit[,4:11]
+labels = train.vsplit[,3]
+coordinate = train.vsplit[,1:2]
+```
+
+```{r}
+loss.mean = function(label, predicted){
+  return (mean(label != predicted))
+}
+```
+
+```{r, random forest}
+
+CVmaster = function(classifier, features, labels, K = 10, loss_method, split_method, coordinate, tree.num = seq(50,600,50), tree.depth = seq(3,20,1)){
+  # get K folds
+  fold = split_method(coordinate, K)
+  
+  # record loss
+  loss = c()
+  
+  # record loss for random forest, not used under other classifiers
+  loss.rf <- array(rep(1, length(tree.num)*length(tree.depth)*K), dim=c(length(tree.num),length(tree.depth),K))
+  
+  for(k in 1:K){
+    # separate into training and validation
+    position = which(fold == k)
+    
+    # features
+    features.train = features[-position,]
+    features.validate = features[position,]
+    
+    # labels
+    labels.train = labels[-position]
+    labels.validate = labels[position]
+    
+    # data for random forest training
+    data.train <- cbind(features.train,label=labels.train)
+    data.val <- cbind(features.validate,labels.validate)
+    
+    if (classifier == "randomForest"){ #should be else if
+      # parameter tuning
+      for (i in 1:length(tree.num)){
+        for (j in 1:length(tree.depth)){
+          # training
+          fit <- ranger(label~NDAI+SD+CORR+DF+CF+BF+AF+AN,
+                        data=data.train,
+                        num.trees = tree.num[i],
+                        max.depth = tree.depth[j], 
+                        num.threads = parallel::detectCores()-1,
+                        classification = TRUE,
+                        seed=1223)
+          
+          # predicting
+          pred <- predict(fit,data=data.val)
+          
+          #compute loss
+          loss.rf[i,j,k] <- loss_method(data.val$labels.validate, pred$predictions)
+       }
+     }
+    }
+  }
+  
+  if (classifier == "randomForest"){
+    loss.rf <- apply(loss.rf,c(1,2),mean)
+
+    # choose the best parameter
+    i=which(loss.rf == min(loss.rf),arr.ind = TRUE)[1]
+    j=which(loss.rf == min(loss.rf),arr.ind = TRUE)[2]
+    
+    # cv under tuned parameter
+    loss = c()
+    for(k in 1:K){
+      # separate into training and validation
+      position = which(fold == k)
+      
+      # features
+      features.train = features[-position,]
+      features.validate = features[position,]
+      
+      # labels
+      labels.train = labels[-position]
+      labels.validate = labels[position]
+      
+      # data for random forest training
+      data.train <- cbind(features.train,label=labels.train)
+      data.val <- cbind(features.validate,labels.validate)
+      
+      # training
+      fit <- ranger(label~NDAI+SD+CORR+DF+CF+BF+AF+AN,
+                    data=data.train,
+                    num.trees = tree.num[i],
+                    max.depth = tree.depth[j], 
+                    num.threads = parallel::detectCores()-1,
+                    classification = TRUE)
+      
+      # predicting
+      pred <- predict(fit,data=data.val)
+      
+      # compute loss
+      loss = c(loss, loss_method(data.val$labels.validate, pred$predictions))
+    }
+    return(list(cv_loss=loss,tree_num=tree.num[i],tree_depth=tree.depth[j]))
+  }
+}
 
 ```
+
+```{r}
+# testing
+results.rf <- CVmaster(classifier = "randomForest", 
+                       features, 
+                       labels, 
+                       K = 10, 
+                       loss_method = loss.mean, 
+                       split_method = folds.Kmean, 
+                       coordinate, 
+                       tree.num = seq(300,350,50), 
+                       tree.depth = seq(5,6,1))
+
+# probablistic prediction, need cutoff values to complete classification
+fit <- ranger(label~NDAI+SD+CORR+DF+CF+BF+AF+AN,
+            data=train.vsplit,
+            num.trees =results.rf$tree_num,
+            max.depth = results.rf$tree_depth,
+            num.threads = parallel::detectCores()-1,
+            classification = TRUE,
+            probability = TRUE,
+            seed=1223)
+
+# store predicted probabilities of labels equal to 1
+prob.pred <- predict(fit,data=test.vsplit)$predictions[,1]
+
+# ROC curve
+# the threshold with highest sensitivity+specificity is printed in the plot
+plot.roc(test.vsplit$label,prob.pred,percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T) 
+
+```
+
 
