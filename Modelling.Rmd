@@ -51,11 +51,14 @@ test.vsplit.coordinates = test.vsplit %>% dplyr::select(x, y)
 
 ### Modelling
 
-```{r}
+#### Random Forest - kmeans
+
+```{r, random forest kmeans}
+set.seed(1223)
 # testing random forest
 results.rf <- CVmaster(classifier = "randomForest", 
-                       test.kmeans.features, 
-                       test.kmeans.labels, 
+                       train.kmeans.features, 
+                       train.kmeans.labels, 
                        K = 10, 
                        loss_method = loss.mean, 
                        split_method = folds.Kmean, 
@@ -65,7 +68,7 @@ results.rf <- CVmaster(classifier = "randomForest",
 
 # probabilistic prediction, need cutoff values to complete classification
 fit.rf <- ranger::ranger(label~NDAI+SD+CORR+DF+CF+BF+AF+AN,
-            data=train.vsplit,
+            data=train.kmeans,
             num.trees =results.rf$tree_num,
             max.depth = results.rf$tree_depth,
             num.threads = parallel::detectCores()-1,
@@ -75,12 +78,105 @@ fit.rf <- ranger::ranger(label~NDAI+SD+CORR+DF+CF+BF+AF+AN,
 
 
 # store predicted probabilities of labels equal to 1
-prob.pred.rf <- predict(fit.rf,data=test.vsplit)$predictions[,1]
+prob.pred.rf <- predict(fit.rf,data=test.kmeans)$predictions[,1]
 
 # ROC curve
 # the threshold with highest sensitivity+specificity is printed in the plot
-plot.roc(test.vsplit$label,prob.pred.rf,percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T) 
- 
+plot.roc(test.kmeans$label,prob.pred.rf,percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T) 
+```
+
+#### Random Forest - vsplit
+
+```{r, random forest vsplit}
+set.seed(1223)
+# testing random forest
+results.rfv <- CVmaster(classifier = "randomForest", 
+                       train.vsplit.features, 
+                       train.vsplit.labels, 
+                       K = 10, 
+                       loss_method = loss.mean, 
+                       split_method = folds.Vsplit, 
+                       train.vsplit.coordinates, 
+                       tree.num = seq(300,350,50), 
+                       tree.depth = seq(5,6,1))
+
+# probabilistic prediction, need cutoff values to complete classification
+fit.rfv <- ranger::ranger(label~NDAI+SD+CORR+DF+CF+BF+AF+AN,
+            data=train.vsplit,
+            num.trees =results.rfv$tree_num,
+            max.depth = results.rfv$tree_depth,
+            num.threads = parallel::detectCores()-1,
+            classification = TRUE,
+            probability = TRUE,
+            seed=1223)
+
+
+# store predicted probabilities of labels equal to 1
+prob.pred.rfv <- predict(fit.rfv,data=test.vsplit)$predictions[,1]
+
+# ROC curve
+# the threshold with highest sensitivity+specificity is printed in the plot
+plot.roc(test.vsplit$label,prob.pred.rfv,percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T) 
+```
+
+#### LDA - kmeans
+
+```{r, LDA kmeans}
+set.seed(1223)
+results.lda = CVmaster("LDA", train.kmeans.features, train.kmeans.labels, K = 10, loss.mean, folds.Kmean, train.kmeans.coordinates)
+
+LDA = lda(train.kmeans.labels ~ ., data = train.kmeans.features)
+predict_LDA = predict(LDA, test.kmeans.features)$posterior[, 2]
+
+# ROC curve
+# the threshold with highest sensitivity+specificity is printed in the plot
+plot.roc(test.kmeans$label,predict_LDA,percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T) 
+results.lda
+```
+
+#### LDA - vsplit
+
+```{r, LDA vsplit}
+set.seed(1223)
+results.ldav = CVmaster("LDA", train.vsplit.features, train.vsplit.labels, K = 10, loss.mean, folds.Kmean, train.vsplit.coordinates)
+
+LDAv = lda(train.vsplit.labels ~ ., data = train.vsplit.features)
+predict_LDAv = predict(LDAv, test.vsplit.features)$posterior[, 2]
+
+# ROC curve
+# the threshold with highest sensitivity+specificity is printed in the plot
+plot.roc(test.vsplit$label,predict_LDAv,percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T) 
+results.ldav
+```
+
+#### QDA - kmeans
+
+```{r, QDA kmeans}
+set.seed(1223)
+results.qda = CVmaster("QDA", train.kmeans.features, train.kmeans.labels, K = 10, loss.mean, folds.Kmean, train.kmeans.coordinates)
+
+QDA = qda(train.kmeans.labels ~ ., data = train.kmeans.features)
+predict_QDA = predict(QDA, test.kmeans.features)$posterior[, 2]
+
+# ROC curve
+# the threshold with highest sensitivity+specificity is printed in the plot
+plot.roc(test.kmeans$label,predict_QDA,percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T) 
+results.qda
+```
+
+#### QDA - vsplit
+
+```{r, QDA vsplit}
+set.seed(1223)
+results.qdav = CVmaster("QDA", train.vsplit.features, train.vsplit.labels, K = 10, loss.mean, folds.Kmean, train.vsplit.coordinates)
+
+QDAv = qda(train.vsplit.labels ~ ., data = train.vsplit.features)
+predict_QDAv = predict(QDAv, test.vsplit.features)$posterior[, 2]
+
+# ROC curve
+# the threshold with highest sensitivity+specificity is printed in the plot
+plot.roc(test.vsplit$label,predict_QDAv,percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T) 
+results.qdav
 ```
 
 ```{r}

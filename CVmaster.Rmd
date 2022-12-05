@@ -5,7 +5,7 @@ folds.Kmean = function(coordinates, K){
   return(kmeans(coordinates, K)$cluster)
 }
 
-# split method 2: 
+# split method 2: Vertical Split
 folds.Vsplit = function(coordinates, K){
   # implicitly assumes that the x axis is sorted
   quantile = round(as.numeric(quantile(seq_len(nrow(coordinates)), seq(0, 1, 1/K))))
