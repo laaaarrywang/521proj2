@@ -37,8 +37,10 @@ loss.mean = function(label, predicted){
 #' @param coordinate The coordinate of the input data, corresponds to features and labels
 #' @param tree.num a parameter used for random forest
 #' @param tree.depth a parameter used for random forest and xgboost
+#' @param eta a parameter used for xgboost
 #' @returns A number: the K-fold CV loss on the training set
-CVmaster = function(classifier, features, labels, K = 10, loss_method, split_method, coordinate, tree.num = seq(50,600,50), tree.depth = seq(3,20,1)){
+CVmaster = function(classifier, features, labels, K = 10, loss_method, split_method, coordinate, 
+                    tree.num = seq(50,600,50), tree.depth = seq(3,20,1), eta = seq(0.1,0.4,0.05)){
   # get K folds
   fold = split_method(coordinate, K)
   
@@ -48,9 +50,8 @@ CVmaster = function(classifier, features, labels, K = 10, loss_method, split_met
   # record loss for random forest, not used under other classifiers
   loss.rf = array(rep(1, length(tree.num)*length(tree.depth)*K), dim=c(length(tree.num),length(tree.depth),K))
   
-  # record for logistics regression to choose cutoff
-  cutoff = seq(0, 1, 1/100)
-  loss.log = array(rep(1, length(cutoff) * K), dim = c(length(cutoff), K))
+  # record loss for xgboost, not used under other classifiers
+  loss.xg = array(rep(1, length(tree.depth)*length(eta)*K), dim = c(length(tree.depth), length(eta), K))
   
   for(k in 1:K){
     # separate into training and validation
@@ -117,17 +118,32 @@ CVmaster = function(classifier, features, labels, K = 10, loss_method, split_met
     
     else if(classifier == "xgboost"){
       # need to modify
+      # encode labels to fit xgboost
       labels.train = replace(labels.train, labels.train == -1, 0)
       labels.validate = replace(labels.validate, labels.validate == -1, 0)
+      
+      # xgb matrix transformation
       dtrain = xgb.DMatrix(data = as.matrix(features.train), label = labels.train)
       dvalidate = xgb.DMatrix(data = as.matrix(features.validate), label = labels.validate)
-      XGB = xgboost(data = dtrain, ...)
-      predict_XGB = predict(XGB, features.validate)
-      loss = c(loss, loss_method(predict_XGB, labels.validate))
+      
+      for (i in 1:length(tree.depth)){
+        for (j in 1:length(eta)){
+          XGB = xgboost(data = dtrain, 
+                        max.depth = tree.depth[i], 
+                        eta = eta[j], 
+                        num.threads = parallel::detectCores()-1, 
+                        nrounds = 2,
+                        objective = "binary:logistic", 
+                        verbose = 0)
+          predict_XGB = predict(XGB, as.matrix(features.validate))
+          
+          loss.xg[i, j, k] = loss_method(predict_XGB, labels.validate)
+        }
+      }
     }
   }
-  
-  # find the best parameter for random forest
+
+  # find the best parameters for random forest
   if (classifier == "randomForest"){
     loss.RF = apply(loss.rf,c(1,2),mean)
 
@@ -136,6 +152,17 @@ CVmaster = function(classifier, features, labels, K = 10, loss_method, split_met
     j = which(loss.RF == min(loss.RF), arr.ind = TRUE)[2]
     
     return(list(cv_loss=loss.rf[i, j, ], tree_num=tree.num[i], tree_depth=tree.depth[j]))
+  }
+  
+  # find the best parameters for xgboost
+  if (classifier == "xgboost"){
+    loss.XG = apply(loss.xg,c(1,2),mean)
+
+    # choose the best parameter
+    i = which(loss.XG == min(loss.XG), arr.ind = TRUE)[1]
+    j = which(loss.XG == min(loss.XG), arr.ind = TRUE)[2]
+    
+    return(list(cv_loss=loss.xg[i, j, ], tree_depth=tree.depth[i], eta=eta[j]))
   }
   
   return (loss)

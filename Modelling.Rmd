@@ -216,6 +216,74 @@ predict_logv = predict(LOGv, test.vsplit, type = "response")
 plot.roc(test.vsplit$label, predict_logv, percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T)
 ```
 
+#### Extreme Gradient Boosting (XGBoost) - kmeans
+
+```{r, XGBoost - kmeans}
+set.seed(1223)
+# testing random forest
+results.xgb <- CVmaster(classifier = "xgboost", 
+                       train.kmeans.features, 
+                       train.kmeans.labels, 
+                       K = 10, 
+                       loss_method = loss.mean, 
+                       split_method = folds.Kmean, 
+                       train.kmeans.coordinates, 
+                       tree.depth = seq(2,3,1),
+                       eta = seq(0.2, 0.4, 0.1))
+
+# encoding
+train.kmeans.labels = replace(train.kmeans.labels, train.kmeans.labels == -1, 0)
+dtrain = xgb.DMatrix(data = as.matrix(train.kmeans.features), label = train.kmeans.labels)
+
+# probabilistic prediction, need cutoff values to complete classification
+fit.xgb <- xgboost(data = dtrain, 
+                   max.depth = results.xgb$tree_depth, 
+                   eta = results.xgb$eta, 
+                   nrounds = 2,
+                   objective = "binary:logistic",
+                   verbose = 0)
+predict_XGB = predict(fit.xgb, as.matrix(test.kmeans.features))
+
+
+# ROC curve
+# the threshold with highest sensitivity+specificity is printed in the plot
+plot.roc(test.kmeans$label,predict_XGB,percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T) 
+```
+
+#### Extreme Gradient Boosting (XGBoost) - vsplit
+
+```{r, XGBoost - vsplit}
+set.seed(1223)
+# testing random forest
+results.xgbv <- CVmaster(classifier = "xgboost", 
+                       train.vsplit.features, 
+                       train.vsplit.labels, 
+                       K = 10, 
+                       loss_method = loss.mean, 
+                       split_method = folds.Vsplit, 
+                       train.vsplit.coordinates, 
+                       tree.depth = seq(2,3,1),
+                       eta = seq(0.2, 0.4, 0.1))
+
+# encoding
+train.vsplit.labels = replace(train.vsplit.labels, train.vsplit.labels == -1, 0)
+dtrain = xgb.DMatrix(data = as.matrix(train.vsplit.features), label = train.vsplit.labels)
+
+# probabilistic prediction, need cutoff values to complete classification
+fit.xgbv <- xgboost(data = dtrain, 
+                   max.depth = results.xgb$tree_depth, 
+                   eta = results.xgb$eta, 
+                   nrounds = 2,
+                   objective = "binary:logistic",
+                   verbose = 0)
+predict_XGBv = predict(fit.xgbv, as.matrix(test.vsplit.features))
+
+
+# ROC curve
+# the threshold with highest sensitivity+specificity is printed in the plot
+plot.roc(test.vsplit$label,predict_XGBv,percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T) 
+```
+
 #### Combined ROC (need to modify)
 
 ```{r}
