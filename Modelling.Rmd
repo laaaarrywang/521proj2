@@ -216,6 +216,43 @@ predict_logv = predict(LOGv, test.vsplit, type = "response")
 plot.roc(test.vsplit$label, predict_logv, percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T)
 ```
 
+#### Naive Bayes - kmeans
+
+```{r, Logistics Regression - kmeans,warning=FALSE}
+set.seed(1223)
+results.nb = CVmaster("naiveBayes", train.kmeans.features, train.kmeans.labels, K = 10, loss.mean, folds.Kmean, train.kmeans.coordinates)
+
+# labels should be character
+train.kmeans$label <- as.character(train.kmeans$label)
+test.kmeans$label <- as.character(test.kmeans$label)
+
+fit <- naivebayes::naive_bayes(label~NDAI+SD+CORR+DF+CF+BF+AF+AN,data = train.kmeans,usekernel = T)
+predict_nb <- predict(fit,test.kmeans,type='prob')[,2]
+
+# ROC curve
+# the threshold with highest sensitivity+specificity is printed in the plot
+# error
+plot.roc(test.kmeans$label, predict_nb, percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T)
+```
+
+#### Naive Bayes - vsplit
+
+```{r, Logistics Regression - vsplit}
+set.seed(1223)
+results.logv = CVmaster("Logistic", train.vsplit.features, train.vsplit.labels, K = 10, loss.mean, folds.Vsplit, train.vsplit.coordinates)
+
+#encode labels to fit logistics regression
+test.vsplit$label[test.vsplit$label == -1] = 0
+
+LOGv = glm(label ~ NDAI+SD+CORR+DF+CF+BF+AF+AN, family = "binomial",data = test.vsplit)
+predict_logv = predict(LOGv, test.vsplit, type = "response")
+
+# ROC curve
+# the threshold with highest sensitivity+specificity is printed in the plot
+# error
+plot.roc(test.vsplit$label, predict_logv, percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T)
+```
+
 #### Extreme Gradient Boosting (XGBoost) - kmeans
 
 ```{r, XGBoost - kmeans}

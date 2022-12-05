@@ -116,6 +116,24 @@ CVmaster = function(classifier, features, labels, K = 10, loss_method, split_met
       loss = c(loss, loss_method(predict_QDA, labels.validate))
     }
     
+    else if (classifier == "naiveBayes"){
+      #label has to be character
+      data.train$label <- as.character(data.train$label)
+      data.val$label <- as.character(data.val$label)
+      
+      fit <- naivebayes::naive_bayes(label~NDAI+SD+CORR+DF+CF+BF+AF+AN,data = data.train)
+      predict_nb <- predict(fit,data.val,type='prob')[,2]
+      
+      #select cutoff value
+      roc.obj <- roc(data.val$label, predict_nb)
+      cutoff <- as.numeric(coords(roc.obj, "best", ret=c("threshold")))
+      
+      # predict label
+      predict_nb <- ifelse(predict_nb > cutoff, "1", "-1")
+      loss <- c(loss, loss_method(predict_nb, data.val$label))
+    }
+
+    
     else if(classifier == "xgboost"){
       # need to modify
       # encode labels to fit xgboost
