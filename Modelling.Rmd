@@ -216,14 +216,7 @@ predict_logv = predict(LOGv, test.vsplit, type = "response")
 plot.roc(test.vsplit$label, predict_logv, percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T)
 ```
 
-```{r}
-# testing logistic
-test.vsplit$label[test.vsplit$label == -1] = 0
-fit.logistic <- glm(label~NDAI+SD+CORR+DF+CF+BF+AF+AN,family = "binomial",data = test.vsplit)
-prob.pred.logis <- predict(fit.logistic,test.vsplit,type = "response")
-
-plot.roc(test.vsplit$label,prob.pred.logis,percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T,add=T)
-```
+#### Combined ROC (need to modify)
 
 ```{r}
 # ROC curves
@@ -268,11 +261,6 @@ ggroc(list(logistic=roc.obj.logis,randomForest=roc.obj.rf)) +
 
 ```
 
-```{r}
-set.seed(1223)
-CVmaster("LDA", train.kmeans.features, train.kmeans.labels, K = 5, loss.mean, folds.Kmean, train.kmeans.coordinates)
-CVmaster("QDA", train.kmeans.features, train.kmeans.labels, K = 5, loss.mean, folds.Kmean, train.kmeans.coordinates)
-```
 
 
 
