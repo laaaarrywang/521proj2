@@ -179,6 +179,43 @@ plot.roc(test.vsplit$label,predict_QDAv,percent=TRUE,thresholds='best',print.thr
 results.qdav
 ```
 
+
+#### Logistics Regression - kmeans
+
+```{r, Logistics Regression - kmeans}
+set.seed(1223)
+results.log = CVmaster("Logistic", train.kmeans.features, train.kmeans.labels, K = 10, loss.mean, folds.Kmean, train.kmeans.coordinates)
+
+#encode labels to fit logistics regression
+test.kmeans$label[test.kmeans$label == -1] = 0
+
+LOG = glm(label ~ NDAI+SD+CORR+DF+CF+BF+AF+AN, family = "binomial",data = test.kmeans)
+predict_log = predict(LOG, test.kmeans, type = "response")
+
+# ROC curve
+# the threshold with highest sensitivity+specificity is printed in the plot
+# error
+plot.roc(test.kmeans$label, predict_log, percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T)
+```
+
+#### Logistics Regression - vsplit
+
+```{r, Logistics Regression - vsplit}
+set.seed(1223)
+results.logv = CVmaster("Logistic", train.vsplit.features, train.vsplit.labels, K = 10, loss.mean, folds.Vsplit, train.vsplit.coordinates)
+
+#encode labels to fit logistics regression
+test.vsplit$label[test.vsplit$label == -1] = 0
+
+LOGv = glm(label ~ NDAI+SD+CORR+DF+CF+BF+AF+AN, family = "binomial",data = test.vsplit)
+predict_logv = predict(LOGv, test.vsplit, type = "response")
+
+# ROC curve
+# the threshold with highest sensitivity+specificity is printed in the plot
+# error
+plot.roc(test.vsplit$label, predict_logv, percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T)
+```
+
 ```{r}
 # testing logistic
 test.vsplit$label[test.vsplit$label == -1] = 0
