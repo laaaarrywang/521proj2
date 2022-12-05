@@ -218,7 +218,7 @@ plot.roc(test.vsplit$label, predict_logv, percent=TRUE,thresholds='best',print.t
 
 #### Naive Bayes - kmeans
 
-```{r, Logistics Regression - kmeans,warning=FALSE}
+```{r, Naive Bayes - kmeans,warning=FALSE}
 set.seed(1223)
 results.nb = CVmaster("naiveBayes", train.kmeans.features, train.kmeans.labels, K = 10, loss.mean, folds.Kmean, train.kmeans.coordinates)
 
@@ -237,20 +237,21 @@ plot.roc(test.kmeans$label, predict_nb, percent=TRUE,thresholds='best',print.thr
 
 #### Naive Bayes - vsplit
 
-```{r, Logistics Regression - vsplit}
+```{r, Naive Bayes - vsplit}
 set.seed(1223)
-results.logv = CVmaster("Logistic", train.vsplit.features, train.vsplit.labels, K = 10, loss.mean, folds.Vsplit, train.vsplit.coordinates)
+results.nbv = CVmaster("naiveBayes", train.vsplit.features, train.vsplit.labels, K = 10, loss.mean, folds.Vsplit, train.vsplit.coordinates)
 
-#encode labels to fit logistics regression
-test.vsplit$label[test.vsplit$label == -1] = 0
+# labels should be character
+train.vsplit$label <- as.character(train.vsplit$label)
+test.vsplit$label <- as.character(test.vsplit$label)
 
-LOGv = glm(label ~ NDAI+SD+CORR+DF+CF+BF+AF+AN, family = "binomial",data = test.vsplit)
-predict_logv = predict(LOGv, test.vsplit, type = "response")
+fit <- naivebayes::naive_bayes(label~NDAI+SD+CORR+DF+CF+BF+AF+AN,data = train.vsplit,usekernel = T)
+predict_nbv <- predict(fit,test.vsplit,type='prob')[,2]
 
 # ROC curve
 # the threshold with highest sensitivity+specificity is printed in the plot
 # error
-plot.roc(test.vsplit$label, predict_logv, percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T)
+plot.roc(test.vsplit$label, predict_nbv, percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T)
 ```
 
 #### Extreme Gradient Boosting (XGBoost) - kmeans
@@ -367,6 +368,33 @@ ggroc(list(logistic=roc.obj.logis,randomForest=roc.obj.rf)) +
 ```
 
 
+```{r}
+results.log
+results.lda
+results.qda
+results.nb
+results.rf$cv_loss
+results.xgb$cv_loss
 
+mean(results.log)
+mean(results.lda)
+mean(results.qda)
+mean(results.nb)
+mean(results.rf$cv_loss)
+mean(results.xgb$cv_loss)
 
+results.logv
+results.ldav
+results.qdav
+results.nbv
+results.rfv$cv_loss
+results.xgbv$cv_loss
+
+mean(results.logv)
+mean(results.ldav)
+mean(results.qdav)
+mean(results.nbv)
+mean(results.rfv$cv_loss)
+mean(results.xgbv$cv_loss)
+```
 

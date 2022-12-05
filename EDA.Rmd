@@ -86,7 +86,7 @@ The correlations between NDAI, SD, CORR and the radiance features increase as th
 For the radiance, we could see that the correlations between those with smaller angles are higher than those with larger angles given similar angle difference. The correlation decreases as the difference between angles increases but all correlations are at least 0.548.
 
 #### (ii)
-```{r}
+```{r, relationship between features and labels}
 p1 = image_binded %>% mutate(label = as.character(label)) %>%
   ggplot() +
   geom_density(aes(x=SD, fill=label),alpha=0.6)
@@ -132,6 +132,11 @@ p5+p6+p7+p8+p9
 For the three essential engineered features (SD,NDAI,CORR): samples labelled "no cloud" typically have lower SD, NDAI and CORR.  
 
 For the five radiance features: samples labelled "no cloud" typically have two peaks, and are more tightly distributed.
-samples labelled "cloud" are more sparsely distributed and negatively skewed. The peak for samples labelled "cloud" normally lies between the peaks for samples labelled "no cloud"
+Samples labelled "cloud" are more sparsely distributed and negatively skewed. The peak for samples labelled "cloud" normally lies between the peaks for samples labelled "no cloud"
 
 *** Side remark - Also, it appears that almost all data points with low NDAI are labelled as "no cloud", while a few are undetermined and almost none are labelled as "cloud".
+
+
+```{r, all pairwise relationships}
+ggpairs(image_binded,columns = c("NDAI", "SD", "CORR","DF","CF","BF","AF","AN", "label")) 
+```

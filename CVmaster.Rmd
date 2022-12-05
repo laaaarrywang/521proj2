@@ -149,12 +149,12 @@ CVmaster = function(classifier, features, labels, K = 10, loss_method, split_met
           XGB = xgboost(data = dtrain, 
                         max.depth = tree.depth[i], 
                         eta = eta[j], 
-                        num.threads = parallel::detectCores()-1, 
                         nrounds = 2,
                         objective = "binary:logistic", 
                         verbose = 0)
           predict_XGB = predict(XGB, as.matrix(features.validate))
           
+          predict_XGB = ifelse(predict_XGB > 0.5, 1, 0)
           loss.xg[i, j, k] = loss_method(predict_XGB, labels.validate)
         }
       }
