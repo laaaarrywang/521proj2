@@ -16,6 +16,31 @@ image3 %>%
   group_by(label) %>%
   summarise(count = n()) %>%
   mutate(percentage = count/sum(count))
+
+image_binded %>%
+  group_by(label) %>%
+  summarise(count = n()) %>%
+  mutate(percentage = count/sum(count))
+
+image1.valid %>%
+  group_by(label) %>%
+  summarise(count = n()) %>%
+  mutate(percentage = count/sum(count))
+
+image2.valid %>%
+  group_by(label) %>%
+  summarise(count = n()) %>%
+  mutate(percentage = count/sum(count))
+
+image3.valid %>%
+  group_by(label) %>%
+  summarise(count = n()) %>%
+  mutate(percentage = count/sum(count))
+
+image.valid %>%
+  group_by(label) %>%
+  summarise(count = n()) %>%
+  mutate(percentage = count/sum(count))
 ```
 
 label: -1 (no cloud); 0; 1 (cloud)
