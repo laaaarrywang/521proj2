@@ -207,6 +207,30 @@ mean(predicted_XGB != test.kmeans.labels.XGB)
 
 
 
+<!-- # another way to make roc curve -->
+<!-- # plot(roc.obj.rf, -->
+<!-- #      print.auc = TRUE, -->
+<!-- #      auc.polygon = TRUE, -->
+<!-- #      max.auc.polygon = TRUE, -->
+<!-- #      legacy.axes = TRUE, -->
+<!-- #      auc.polygon.col = "lightblue", -->
+<!-- #       print.thres = "best", -->
+<!-- #      print.auc.x = 0.4, -->
+<!-- #      print.auc.y = 0.2 -->
+<!-- #      ) -->
+<!-- #  -->
+<!-- # plot(roc.obj.logis, -->
+<!-- #      print.auc = TRUE, -->
+<!-- #      auc.polygon = TRUE, -->
+<!-- #      max.auc.polygon = TRUE, -->
+<!-- #      legacy.axes = TRUE, -->
+<!-- #      auc.polygon.col = "lightyellow", -->
+<!-- #       print.thres = "best", -->
+<!-- #      print.auc.x = 0.4, -->
+<!-- #      print.auc.y = 0.2, -->
+<!-- #      add=TRUE -->
+<!-- #      ) -->
+
 
 
 

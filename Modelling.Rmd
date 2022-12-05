@@ -322,51 +322,74 @@ predict_XGBv = predict(fit.xgbv, as.matrix(test.vsplit.features))
 plot.roc(test.vsplit$label,predict_XGBv,percent=TRUE,thresholds='best',print.thres="best",legacy.axes = T,auc.polygon = T) 
 ```
 
-#### Combined ROC (need to modify)
-
-```{r}
+#### Combined ROC
+```{r, Kmeans}
 # ROC curves
-roc.obj.rf <- roc(test.vsplit$label, prob.pred.rf)
-roc.obj.logis <- roc(test.vsplit$label, prob.pred.logis)
+roc.obj.rf <- roc(test.kmeans$label, prob.pred.rf)
+roc.obj.logis <- roc(test.kmeans$label, predict_log)
+roc.obj.lda = roc(test.kmeans$label, predict_LDA)
+roc.obj.qda = roc(test.kmeans$label, predict_QDA)
+roc.obj.nb = roc(test.kmeans$label, predict_nb)
+roc.obj.xgb = roc(test.kmeans$label, predict_XGB)
 
 coords(roc.obj.logis, "best", ret=c("threshold", "specificity", "sensitivity"))
 coords(roc.obj.rf, "best", ret=c("threshold", "specificity", "sensitivity"))
-  
+coords(roc.obj.lda, "best", ret=c("threshold", "specificity", "sensitivity"))
+coords(roc.obj.qda, "best", ret=c("threshold", "specificity", "sensitivity"))
+coords(roc.obj.nb, "best", ret=c("threshold", "specificity", "sensitivity"))
+coords(roc.obj.xgb, "best", ret=c("threshold", "specificity", "sensitivity"))
 
-ggroc(list(logistic=roc.obj.logis,randomForest=roc.obj.rf)) +
-  geom_point(aes(x=0.9188396, y=0.9847082), colour="red") +
-  geom_point(aes(x=0.9107317, y=0.9719358), colour="blue") +
-  annotate("text", x=0.9188396, y=1, label = "0.3564",size=3,color='red') +
-  annotate("text", x=0.87, y=0.9719358, label = "0.3011",size=3,color='blue') +
-  labs(fill = "Dose (mg)")
+ggroc(list(logistic=roc.obj.logis,randomForest=roc.obj.rf, LDA=roc.obj.lda, QDA=roc.obj.qda, naiveBayes=roc.obj.nb, XGBoost = roc.obj.xgb)) +
+  geom_point(aes(x=0.9325902, y=0.9628435), colour="lightcoral") +
+  geom_point(aes(x=0.8592957, y=0.9427171), colour="tan") +
+  geom_point(aes(x=0.8361304, y=0.8522771), colour="green") +
+  geom_point(aes(x=0.8678581, y=0.9133445), colour="springgreen3") +
+  geom_point(aes(x=0.8983716, y=0.9516191), colour="lightblue") +
+  geom_point(aes(x=0.8518542, y=0.9465875), colour="violet") +
+  labs(fill = "Dose (mg)") +
+  theme_minimal()
 
-
-# another way to make roc curve
-# plot(roc.obj.rf,
-#      print.auc = TRUE,
-#      auc.polygon = TRUE,
-#      max.auc.polygon = TRUE,
-#      legacy.axes = TRUE,
-#      auc.polygon.col = "lightblue",
-#       print.thres = "best",
-#      print.auc.x = 0.4,
-#      print.auc.y = 0.2
-#      )
-# 
-# plot(roc.obj.logis,
-#      print.auc = TRUE,
-#      auc.polygon = TRUE,
-#      max.auc.polygon = TRUE,
-#      legacy.axes = TRUE,
-#      auc.polygon.col = "lightyellow",
-#       print.thres = "best",
-#      print.auc.x = 0.4,
-#      print.auc.y = 0.2,
-#      add=TRUE
-#      )
-
+# 0.359, 0.260, 0.278, 0.013, 0.047, 0.290
 ```
 
+
+```{r, vsplit}
+# ROC curves
+roc.obj.rfv <- roc(test.vsplit$label, prob.pred.rfv)
+roc.obj.logisv <- roc(test.vsplit$label, predict_logv)
+roc.obj.ldav = roc(test.vsplit$label, predict_LDAv)
+roc.obj.qdav = roc(test.vsplit$label, predict_QDAv)
+roc.obj.nbv = roc(test.vsplit$label, predict_nbv)
+roc.obj.xgbv = roc(test.vsplit$label, predict_XGBv)
+
+coords(roc.obj.logisv, "best", ret=c("threshold", "specificity", "sensitivity"))
+coords(roc.obj.rfv, "best", ret=c("threshold", "specificity", "sensitivity"))
+coords(roc.obj.ldav, "best", ret=c("threshold", "specificity", "sensitivity"))
+coords(roc.obj.qdav, "best", ret=c("threshold", "specificity", "sensitivity"))
+coords(roc.obj.nbv, "best", ret=c("threshold", "specificity", "sensitivity"))
+coords(roc.obj.xgbv, "best", ret=c("threshold", "specificity", "sensitivity"))
+
+ggroc(list(logistic=roc.obj.logisv,randomForest=roc.obj.rfv, LDA=roc.obj.ldav, QDA=roc.obj.qdav, naiveBayes=roc.obj.nbv, XGBoost = roc.obj.xgbv)) +
+  geom_point(aes(x=0.9184395, y=0.9829825), colour="tan") +
+  geom_point(aes(x=0.9563934, y=0.972807), colour="lightcoral") +
+  geom_point(aes(x=0.8992537, y=0.9645614), colour="green") +
+  geom_point(aes(x=0.9193306, y=0.9938596), colour="violet") +
+  geom_point(aes(x=0.8173869, y=0.9770175), colour="lightblue") +
+  geom_point(aes(x=0.9218646, y=0.9875439), colour="springgreen3") +
+  labs(fill = "Dose (mg)") +
+  theme_minimal()
+
+# 0.129, 0.580, 0.181, 0.013, 0.000329, 0.481
+```
+
+
+
+```{r}
+results.rf
+results.rfv
+results.xgb
+results.xgbv
+```
 
 ```{r}
 results.log
