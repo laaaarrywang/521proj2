@@ -1,3 +1,5 @@
+## Question 4
+
 ### (a)
 
 ```{r}
@@ -208,68 +210,8 @@ vsplit.train  = vsplit.train %>%
   mutate(category = ifelse(pred_label == label, ifelse(label == -1, "FP", "FN"), ifelse(label == 1, "TP", "TN")))
 ```
 
-```{r, range of feature values}
-c1 = kmeans.test %>%
-  ggplot(aes(x = log(SD), fill = category)) +
-  geom_density(alpha = 0.6) +
-  labs(x = "predicted probability", caption = "K-means test set")
-c2 = kmeans.train %>%
-  ggplot(aes(x = log(SD), fill = category)) +
-  geom_density(alpha = 0.6)+
-  labs(x = "predicted probability", caption = "K-means train set")
-c3 = vsplit.test %>%
-  ggplot(aes(x = log(SD), fill = category)) +
-  geom_density(alpha = 0.6)+
-  labs(x = "predicted probability", caption = "Vertical split test set")
-c4 = vsplit.train %>%
-  ggplot(aes(x = log(SD), fill = category)) +
-  geom_density(alpha = 0.6)+
-  labs(x = "predicted probability", caption = "Vertical split train set")
-c1 + c2 + c3 + c4
-```
 
 ```{r, range of feature values}
-d1 = kmeans.test %>%
-  ggplot(aes(x = CORR, fill = category)) +
-  geom_density(alpha = 0.6) +
-  labs(x = "predicted probability", caption = "K-means test set")
-d2 = kmeans.train %>%
-  ggplot(aes(x = CORR, fill = category)) +
-  geom_density(alpha = 0.6)+
-  labs(x = "predicted probability", caption = "K-means train set")
-d3 = vsplit.test %>%
-  ggplot(aes(x = CORR, fill = category)) +
-  geom_density(alpha = 0.6)+
-  labs(x = "predicted probability", caption = "Vertical split test set")
-d4 = vsplit.train %>%
-  ggplot(aes(x = CORR, fill = category)) +
-  geom_density(alpha = 0.6)+
-  labs(x = "predicted probability", caption = "Vertical split train set")
-d1 + d2 + d3 + d4
-```
-
-
-```{r, range of feature values}
-e1 = kmeans.test %>%
-  ggplot(aes(x = NDAI, fill = category)) +
-  geom_density(alpha = 0.6) +
-  labs(x = "predicted probability", caption = "K-means test set")
-e2 = kmeans.train %>%
-  ggplot(aes(x = NDAI, fill = category)) +
-  geom_density(alpha = 0.6)+
-  labs(x = "predicted probability", caption = "K-means train set")
-e3 = vsplit.test %>%
-  ggplot(aes(x = NDAI, fill = category)) +
-  geom_density(alpha = 0.6)+
-  labs(x = "predicted probability", caption = "Vertical split test set")
-e4 = vsplit.train %>%
-  ggplot(aes(x = NDAI, fill = category)) +
-  geom_density(alpha = 0.6)+
-  labs(x = "predicted probability", caption = "Vertical split train set")
-e1 + e2 + e3 + e4
-```
-
-```{r}
 a1 = rbind(kmeans.test, kmeans.train, vsplit.test, vsplit.train) %>%
   ggplot(aes(x = log(SD), fill = category)) +
   geom_density(alpha = 0.6) +
