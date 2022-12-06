@@ -332,24 +332,21 @@ roc.obj.qda = roc(test.kmeans$label, predict_QDA)
 roc.obj.nb = roc(test.kmeans$label, predict_nb)
 roc.obj.xgb = roc(test.kmeans$label, predict_XGB)
 
-coords(roc.obj.logis, "best", ret=c("threshold", "specificity", "sensitivity"))
-coords(roc.obj.rf, "best", ret=c("threshold", "specificity", "sensitivity"))
-coords(roc.obj.lda, "best", ret=c("threshold", "specificity", "sensitivity"))
-coords(roc.obj.qda, "best", ret=c("threshold", "specificity", "sensitivity"))
-coords(roc.obj.nb, "best", ret=c("threshold", "specificity", "sensitivity"))
-coords(roc.obj.xgb, "best", ret=c("threshold", "specificity", "sensitivity"))
+clogis = coords(roc.obj.logis, "best", ret=c("threshold", "specificity", "sensitivity"))
+crf = coords(roc.obj.rf, "best", ret=c("threshold", "specificity", "sensitivity"))
+clda = coords(roc.obj.lda, "best", ret=c("threshold", "specificity", "sensitivity"))
+cqda = coords(roc.obj.qda, "best", ret=c("threshold", "specificity", "sensitivity"))
+cnb = coords(roc.obj.nb, "best", ret=c("threshold", "specificity", "sensitivity"))
+cxgb = coords(roc.obj.xgb, "best", ret=c("threshold", "specificity", "sensitivity"))
 
 ggroc(list(logistic=roc.obj.logis,randomForest=roc.obj.rf, LDA=roc.obj.lda, QDA=roc.obj.qda, naiveBayes=roc.obj.nb, XGBoost = roc.obj.xgb)) +
-  geom_point(aes(x=0.9325902, y=0.9628435), colour="lightcoral") +
-  geom_point(aes(x=0.8592957, y=0.9427171), colour="tan") +
-  geom_point(aes(x=0.8361304, y=0.8522771), colour="green") +
-  geom_point(aes(x=0.8678581, y=0.9133445), colour="springgreen3") +
-  geom_point(aes(x=0.8983716, y=0.9516191), colour="lightblue") +
-  geom_point(aes(x=0.8518542, y=0.9465875), colour="violet") +
-  labs(fill = "Dose (mg)") +
-  theme_minimal()
-
-# 0.359, 0.260, 0.278, 0.013, 0.047, 0.290
+  geom_point(aes(x=clogis$specificity, y=clogis$sensitivity), colour="lightcoral") +
+  geom_point(aes(x=crf$specificity, y=crf$sensitivity), colour="tan") +
+  geom_point(aes(x=clda$specificity, y=clda$sensitivity), colour="green") +
+  geom_point(aes(x=cqda$specificity, y=cqda$sensitivity), colour="springgreen3") +
+  geom_point(aes(x=cnb$specificity, y=cnb$sensitivity), colour="lightblue") +
+  geom_point(aes(x=cxgb$specificity, y=cxgb$sensitivity), colour="violet") +
+  labs(fill = "Dose (mg)")
 ```
 
 
@@ -362,42 +359,44 @@ roc.obj.qdav = roc(test.vsplit$label, predict_QDAv)
 roc.obj.nbv = roc(test.vsplit$label, predict_nbv)
 roc.obj.xgbv = roc(test.vsplit$label, predict_XGBv)
 
-coords(roc.obj.logisv, "best", ret=c("threshold", "specificity", "sensitivity"))
-coords(roc.obj.rfv, "best", ret=c("threshold", "specificity", "sensitivity"))
-coords(roc.obj.ldav, "best", ret=c("threshold", "specificity", "sensitivity"))
-coords(roc.obj.qdav, "best", ret=c("threshold", "specificity", "sensitivity"))
-coords(roc.obj.nbv, "best", ret=c("threshold", "specificity", "sensitivity"))
-coords(roc.obj.xgbv, "best", ret=c("threshold", "specificity", "sensitivity"))
+clogisv = coords(roc.obj.logisv, "best", ret=c("threshold", "specificity", "sensitivity"))
+crfv = coords(roc.obj.rfv, "best", ret=c("threshold", "specificity", "sensitivity"))
+cldav = coords(roc.obj.ldav, "best", ret=c("threshold", "specificity", "sensitivity"))
+cqdav = coords(roc.obj.qdav, "best", ret=c("threshold", "specificity", "sensitivity"))
+cnbv = coords(roc.obj.nbv, "best", ret=c("threshold", "specificity", "sensitivity"))
+cxgbv = coords(roc.obj.xgbv, "best", ret=c("threshold", "specificity", "sensitivity"))
 
 ggroc(list(logistic=roc.obj.logisv,randomForest=roc.obj.rfv, LDA=roc.obj.ldav, QDA=roc.obj.qdav, naiveBayes=roc.obj.nbv, XGBoost = roc.obj.xgbv)) +
-  geom_point(aes(x=0.9184395, y=0.9829825), colour="tan") +
-  geom_point(aes(x=0.9563934, y=0.972807), colour="lightcoral") +
-  geom_point(aes(x=0.8992537, y=0.9645614), colour="green") +
-  geom_point(aes(x=0.9193306, y=0.9938596), colour="violet") +
-  geom_point(aes(x=0.8173869, y=0.9770175), colour="lightblue") +
-  geom_point(aes(x=0.9218646, y=0.9875439), colour="springgreen3") +
-  labs(fill = "Dose (mg)") +
-  theme_minimal()
+  geom_point(aes(x=clogisv$specificity, y=clogisv$sensitivity), colour="tan") +
+  geom_point(aes(x=crfv$specificity, y=crfv$sensitivity), colour="lightcoral") +
+  geom_point(aes(x=cldav$specificity, y=cldav$sensitivity), colour="green") +
+  geom_point(aes(x=cqdav$specificity, y=cqdav$sensitivity), colour="violet") +
+  geom_point(aes(x=cnbv$specificity, y=cnbv$sensitivity), colour="lightblue") +
+  geom_point(aes(x=cxgbv$specificity, y=cxgbv$sensitivity), colour="springgreen3") +
+  labs(fill = "Dose (mg)") 
+```
 
-# 0.129, 0.580, 0.181, 0.013, 0.000329, 0.481
+```{r, Find PPV}
+
+
 ```
 
 ```{r, test accuracy}
 # 0.359, 0.260, 0.278, 0.013, 0.047, 0.290 - kmeans
-mean(test.kmeans$label == ifelse(prob.pred.rf > 0.2601759	, 1, -1))
-mean(test.kmeans$label == ifelse(predict_log > 0.3590394, 1, -1))
-mean(test.kmeans$label == ifelse(predict_LDA > 0.2777812, 1, -1))
-mean(test.kmeans$label == ifelse(predict_QDA > 0.01329383, 1, -1))
-mean(test.kmeans$label == ifelse(predict_nb > 0.0472667, 1, -1))
-mean(test.kmeans$label == ifelse(predict_XGB > 0.2904321, 1, -1))
+mean(test.kmeans$label == ifelse(prob.pred.rf > crf$threshold	, 1, -1))
+mean(test.kmeans$label == ifelse(predict_log > clogis$threshold, 1, -1))
+mean(test.kmeans$label == ifelse(predict_LDA > clda$threshold, 1, -1))
+mean(test.kmeans$label == ifelse(predict_QDA > cqda$threshold, 1, -1))
+mean(test.kmeans$label == ifelse(predict_nb > cnb$threshold, 1, -1))
+mean(test.kmeans$label == ifelse(predict_XGB > cxgb$threshold, 1, -1))
 print(" ")
 # 0.129, 0.580, 0.181, 0.013, 0.000329, 0.481 - vsplit
-mean(test.vsplit$label == ifelse(prob.pred.rfv > 0.5797375, 0, 1))
-mean(test.vsplit$label == ifelse(predict_logv > 0.129048, 1, 0))
-mean(test.vsplit$label == ifelse(predict_LDAv > 0.1806408, 1, 0))
-mean(test.vsplit$label == ifelse(predict_QDAv > 0.01259511, 1, 0))
-mean(test.vsplit$label == ifelse(predict_nbv > 0.0003292419, 1, 0))
-mean(test.vsplit$label == ifelse(predict_XGBv > 0.4810411, 1, 0))
+mean(test.vsplit$label == ifelse(prob.pred.rfv > crfv$threshold, 0, 1))
+mean(test.vsplit$label == ifelse(predict_logv > clogisv$threshold, 1, 0))
+mean(test.vsplit$label == ifelse(predict_LDAv > cldav$threshold, 1, 0))
+mean(test.vsplit$label == ifelse(predict_QDAv >cqdav$threshold, 1, 0))
+mean(test.vsplit$label == ifelse(predict_nbv > cnbv$threshold, 1, 0))
+mean(test.vsplit$label == ifelse(predict_XGBv > cxgbv$threshold, 1, 0))
 ```
 
 ```{r, check best parameters}
