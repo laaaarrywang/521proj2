@@ -2,8 +2,7 @@
 
 ### (a)
 
-```{r}
-# Error-Number of trees
+```{r, error-number of trees plot}
 error <- c()
 for (i in seq(50,700,10)){
   fit = ranger::ranger(label ~ NDAI+SD+CORR+DF+CF+BF+AF+AN,
@@ -27,8 +26,7 @@ tibble(tree.num = seq(50,700,10), error=error) %>%
   labs(x="Number of Trees",y="Test Classification Error")
 ```
 
-```{r}
-# Feature Importance
+```{r, feature importance}
 fit = ranger::ranger(label ~ NDAI+SD+CORR+DF+CF+BF+AF+AN,
                      data=train.vsplit,
                      num.trees = 470,
@@ -198,6 +196,7 @@ b4 = vsplit.train %>%
   labs(x = "predicted probability", caption = "Vertical split train set")
 b1 + b2 + b3 + b4
 ```
+
 ```{r, mutate by TP, TN, FP, TN}
 # mutate to indicate agreement
 kmeans.test  = kmeans.test %>%
