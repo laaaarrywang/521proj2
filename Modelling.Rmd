@@ -323,7 +323,7 @@ plot.roc(test.vsplit$label,predict_XGBv,percent=TRUE,thresholds='best',print.thr
 ```
 
 #### Combined ROC
-```{r, Kmeans}
+```{r, ROC - Kmeans}
 # ROC curves
 roc.obj.rf <- roc(test.kmeans$label, prob.pred.rf)
 roc.obj.logis <- roc(test.kmeans$label, predict_log)
@@ -350,7 +350,7 @@ ggroc(list(logistic=roc.obj.logis,randomForest=roc.obj.rf, LDA=roc.obj.lda, QDA=
 ```
 
 
-```{r, vsplit}
+```{r, ROC - vsplit}
 # ROC curves
 roc.obj.rfv <- roc(test.vsplit$label, prob.pred.rfv)
 roc.obj.logisv <- roc(test.vsplit$label, predict_logv)
