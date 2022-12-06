@@ -63,8 +63,8 @@ results.rf <- CVmaster(classifier = "randomForest",
                        loss_method = loss.mean, 
                        split_method = folds.Kmean, 
                        train.kmeans.coordinates, 
-                       tree.num = seq(300,350,50), 
-                       tree.depth = seq(5,6,1))
+                       tree.num = seq(200,600,50), 
+                       tree.depth = seq(5,15,1))
 
 # probabilistic prediction, need cutoff values to complete classification
 fit.rf <- ranger::ranger(label~NDAI+SD+CORR+DF+CF+BF+AF+AN,
@@ -97,8 +97,8 @@ results.rfv <- CVmaster(classifier = "randomForest",
                        loss_method = loss.mean, 
                        split_method = folds.Vsplit, 
                        train.vsplit.coordinates, 
-                       tree.num = seq(300,350,50), 
-                       tree.depth = seq(5,6,1))
+                       tree.num = seq(200,600,50), 
+                       tree.depth = seq(5,15,1))
 
 # probabilistic prediction, need cutoff values to complete classification
 fit.rfv <- ranger::ranger(label~NDAI+SD+CORR+DF+CF+BF+AF+AN,
@@ -367,8 +367,8 @@ cnbv = coords(roc.obj.nbv, "best", ret=c("threshold", "specificity", "sensitivit
 cxgbv = coords(roc.obj.xgbv, "best", ret=c("threshold", "specificity", "sensitivity"))
 
 ggroc(list(logistic=roc.obj.logisv,randomForest=roc.obj.rfv, LDA=roc.obj.ldav, QDA=roc.obj.qdav, naiveBayes=roc.obj.nbv, XGBoost = roc.obj.xgbv)) +
-  geom_point(aes(x=clogisv$specificity, y=clogisv$sensitivity), colour="tan") +
-  geom_point(aes(x=crfv$specificity, y=crfv$sensitivity), colour="lightcoral") +
+  geom_point(aes(x=clogisv$specificity, y=clogisv$sensitivity), colour="lightcoral") +
+  geom_point(aes(x=crfv$specificity, y=crfv$sensitivity), colour="tan") +
   geom_point(aes(x=cldav$specificity, y=cldav$sensitivity), colour="green") +
   geom_point(aes(x=cqdav$specificity, y=cqdav$sensitivity), colour="violet") +
   geom_point(aes(x=cnbv$specificity, y=cnbv$sensitivity), colour="lightblue") +
@@ -376,9 +376,145 @@ ggroc(list(logistic=roc.obj.logisv,randomForest=roc.obj.rfv, LDA=roc.obj.ldav, Q
   labs(fill = "Dose (mg)") 
 ```
 
-```{r, Find PPV}
+```{r, Find PPV and NPV}
+# PPV = TP/Predicted Positive
+pred_rf = ifelse(prob.pred.rf > crf$threshold	, 1, -1)
+pred_log = ifelse(predict_log > clogis$threshold, 1, -1)
+pred_lda = ifelse(predict_LDA > clda$threshold, 1, -1)
+pred_qda = ifelse(predict_QDA > cqda$threshold, 1, -1)
+pred_nb = ifelse(predict_nb > cnb$threshold, 1, -1)
+pred_xgb = ifelse(predict_XGB > cxgb$threshold, 1, -1)
 
+pred_rfv = ifelse(prob.pred.rfv > crfv$threshold, 0, 1)
+pred_logv = ifelse(predict_logv > clogisv$threshold, 1, 0)
+pred_ldav = ifelse(predict_LDAv > cldav$threshold, 1, 0)
+pred_qdav = ifelse(predict_QDAv > cqdav$threshold, 1, 0)
+pred_nbv = ifelse(predict_nbv > cnbv$threshold, 1, 0)
+pred_xgbv = ifelse(predict_XGBv > cxgbv$threshold, 1, 0)
 
+PPVrf = nrow(as.data.frame(cbind(pred_rf, test.kmeans$label)) %>% 
+  dplyr::filter(pred_rf == 1 & V2 == 1))/nrow(as.data.frame(cbind(pred_rf, test.kmeans$label)) %>% 
+  dplyr::filter(pred_rf == 1))
+PPVlog = nrow(as.data.frame(cbind(pred_log, test.kmeans$label)) %>% 
+  dplyr::filter(pred_log == 1 & V2 == 1))/nrow(as.data.frame(cbind(pred_log, test.kmeans$label)) %>% 
+  dplyr::filter(pred_log == 1))
+PPVlda = nrow(as.data.frame(cbind(pred_lda, test.kmeans$label)) %>% 
+  dplyr::filter(pred_lda == 1 & V2 == 1))/nrow(as.data.frame(cbind(pred_lda, test.kmeans$label)) %>% 
+  dplyr::filter(pred_lda == 1))
+PPVqda = nrow(as.data.frame(cbind(pred_qda, test.kmeans$label)) %>% 
+  dplyr::filter(pred_qda == 1 & V2 == 1))/nrow(as.data.frame(cbind(pred_qda, test.kmeans$label)) %>% 
+  dplyr::filter(pred_qda == 1))
+PPVnb = nrow(as.data.frame(cbind(pred_nb, test.kmeans$label)) %>% 
+  dplyr::filter(pred_nb == 1 & V2 == 1))/nrow(as.data.frame(cbind(pred_nb, test.kmeans$label)) %>% 
+  dplyr::filter(pred_nb == 1))
+PPVxgb = nrow(as.data.frame(cbind(pred_xgb, test.kmeans$label)) %>% 
+  dplyr::filter(pred_xgb == 1 & V2 == 1))/nrow(as.data.frame(cbind(pred_xgb, test.kmeans$label)) %>% 
+  dplyr::filter(pred_xgb == 1))
+
+PPVrfv = nrow(as.data.frame(cbind(pred_rfv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_rfv == 1 & V2 == 1))/nrow(as.data.frame(cbind(pred_rfv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_rfv == 1))
+PPVlogv = nrow(as.data.frame(cbind(pred_logv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_logv == 1 & V2 == 1))/nrow(as.data.frame(cbind(pred_logv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_logv == 1))
+PPVldav = nrow(as.data.frame(cbind(pred_ldav, test.vsplit$label)) %>% 
+  dplyr::filter(pred_ldav == 1 & V2 == 1))/nrow(as.data.frame(cbind(pred_ldav, test.vsplit$label)) %>% 
+  dplyr::filter(pred_ldav == 1))
+PPVqdav = nrow(as.data.frame(cbind(pred_qdav, test.vsplit$label)) %>% 
+  dplyr::filter(pred_qdav == 1 & V2 == 1))/nrow(as.data.frame(cbind(pred_qdav, test.vsplit$label)) %>% 
+  dplyr::filter(pred_qdav == 1))
+PPVnbv = nrow(as.data.frame(cbind(pred_nbv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_nbv == 1 & V2 == 1))/nrow(as.data.frame(cbind(pred_nbv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_nbv == 1))
+PPVxgbv = nrow(as.data.frame(cbind(pred_xgbv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_xgbv == 1 & V2 == 1))/nrow(as.data.frame(cbind(pred_xgbv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_xgbv == 1))
+```
+
+```{r, NPV calculation}
+NPVrf = nrow(as.data.frame(cbind(pred_rf, test.kmeans$label)) %>% 
+  dplyr::filter(pred_rf == -1 & V2 == -1))/nrow(as.data.frame(cbind(pred_rf, test.kmeans$label)) %>% 
+  dplyr::filter(pred_rf == -1))
+NPVlog = nrow(as.data.frame(cbind(pred_log, test.kmeans$label)) %>% 
+  dplyr::filter(pred_log == -1 & V2 == -1))/nrow(as.data.frame(cbind(pred_log, test.kmeans$label)) %>% 
+  dplyr::filter(pred_log == -1))
+NPVlda = nrow(as.data.frame(cbind(pred_lda, test.kmeans$label)) %>% 
+  dplyr::filter(pred_lda == -1 & V2 == -1))/nrow(as.data.frame(cbind(pred_lda, test.kmeans$label)) %>% 
+  dplyr::filter(pred_lda == -1))
+NPVqda = nrow(as.data.frame(cbind(pred_qda, test.kmeans$label)) %>% 
+  dplyr::filter(pred_qda == -1 & V2 == -1))/nrow(as.data.frame(cbind(pred_qda, test.kmeans$label)) %>% 
+  dplyr::filter(pred_qda == -1))
+NPVnb = nrow(as.data.frame(cbind(pred_nb, test.kmeans$label)) %>% 
+  dplyr::filter(pred_nb ==-1 &  V2 == -1))/nrow(as.data.frame(cbind(pred_nb, test.kmeans$label)) %>% 
+  dplyr::filter(pred_nb == -1))
+NPVxgb = nrow(as.data.frame(cbind(pred_xgb, test.kmeans$label)) %>% 
+  dplyr::filter(pred_xgb == -1 & V2 == -1))/nrow(as.data.frame(cbind(pred_xgb, test.kmeans$label)) %>% 
+  dplyr::filter(pred_xgb == -1))
+
+NPVrfv = nrow(as.data.frame(cbind(pred_rfv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_rfv == 0 & V2 == 0))/nrow(as.data.frame(cbind(pred_rfv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_rfv == 0))
+NPVlogv = nrow(as.data.frame(cbind(pred_logv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_logv == 0 & V2 == 0))/nrow(as.data.frame(cbind(pred_logv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_logv == 0))
+NPVldav = nrow(as.data.frame(cbind(pred_ldav, test.vsplit$label)) %>% 
+  dplyr::filter(pred_ldav == 0 & V2 == 0))/nrow(as.data.frame(cbind(pred_ldav, test.vsplit$label)) %>% 
+  dplyr::filter(pred_ldav == 0))
+NPVqdav = nrow(as.data.frame(cbind(pred_qdav, test.vsplit$label)) %>% 
+  dplyr::filter(pred_qdav == 0 & V2 == 0))/nrow(as.data.frame(cbind(pred_qdav, test.vsplit$label)) %>% 
+  dplyr::filter(pred_qdav == 0))
+NPVnbv = nrow(as.data.frame(cbind(pred_nbv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_nbv == 0 & V2 == 0))/nrow(as.data.frame(cbind(pred_nbv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_nbv == 0))
+NPVxgbv = nrow(as.data.frame(cbind(pred_xgbv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_xgbv == 0 & V2 == 0))/nrow(as.data.frame(cbind(pred_xgbv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_xgbv == 0))
+```
+
+```{r}
+PPVrf
+PPVlog
+PPVlda
+PPVqda
+PPVnb
+PPVxgb
+print(" ")
+PPVrfv
+PPVlogv
+PPVldav
+PPVqdav
+PPVnbv
+PPVxgbv
+print(" ")
+NPVrf
+NPVlog
+NPVlda
+NPVqda
+NPVnb
+NPVxgb
+print(" ")
+NPVrfv
+NPVlogv
+NPVldav
+NPVqdav
+NPVnbv
+NPVxgbv
+```
+
+```{r, Calculate F1 score}
+2*(PPVrf * crf$sensitivity)/(PPVrf + crf$sensitivity)
+2*(PPVlog * clogis$sensitivity)/(PPVlog + clogis$sensitivity)
+2*(PPVlda * clda$sensitivity)/(PPVlda + clda$sensitivity)
+2*(PPVqda * cqda$sensitivity)/(PPVqda + cqda$sensitivity)
+2*(PPVnb * cnb$sensitivity)/(PPVnb + cnb$sensitivity)
+2*(PPVxgb * cxgb$sensitivity)/(PPVxgb + cxgb$sensitivity)
+print(" ")
+2*(PPVrfv * crfv$sensitivity)/(PPVrfv + crfv$sensitivity)
+2*(PPVlogv * clogisv$sensitivity)/(PPVlogv + clogisv$sensitivity)
+2*(PPVldav * cldav$sensitivity)/(PPVldav + cldav$sensitivity)
+2*(PPVqdav * cqdav$sensitivity)/(PPVqdav + cqdav$sensitivity)
+2*(PPVnbv * cnbv$sensitivity)/(PPVnbv + cnbv$sensitivity)
+2*(PPVxgbv * cxgbv$sensitivity)/(PPVxgbv + cxgbv$sensitivity)
 ```
 
 ```{r, test accuracy}
