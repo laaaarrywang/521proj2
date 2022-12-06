@@ -1,3 +1,43 @@
+### (a)
+
+```{r}
+# Error-Number of trees
+error <- c()
+for (i in seq(50,700,10)){
+  fit = ranger::ranger(label ~ NDAI+SD+CORR+DF+CF+BF+AF+AN,
+                        data=train.vsplit,
+                        num.trees = i,
+                        max.depth = 15, 
+                        num.threads = parallel::detectCores()-1,
+                        classification = TRUE,
+                        seed=1223)
+  
+  pred = predict(fit,data=test.vsplit)
+  
+  
+  error <- c(error,mean(pred$predictions!=test.vsplit$label))
+  print(i)
+}
+
+tibble(tree.num = seq(50,700,10), error=error) %>%
+  ggplot() +
+  geom_line(aes(x=tree.num,y=error),color='blue') +
+  labs(x="Number of Trees",y="Test Classification Error")
+```
+
+```{r}
+# Feature Importance
+fit = ranger::ranger(label ~ NDAI+SD+CORR+DF+CF+BF+AF+AN,
+                     data=train.vsplit,
+                     num.trees = 470,
+                     max.depth = 15, 
+                     num.threads = parallel::detectCores()-1,
+                     classification = TRUE,
+                     importance = "impurity",
+                     seed=1223)
+
+importance(fit)
+```
 
 ### (b)
 
