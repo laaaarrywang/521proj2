@@ -229,7 +229,25 @@ e4 = vsplit.train %>%
 e1 + e2 + e3 + e4
 ```
 
-
+```{r}
+a1 = rbind(kmeans.test, kmeans.train, vsplit.test, vsplit.train) %>%
+  ggplot(aes(x = log(SD), fill = category)) +
+  geom_density(alpha = 0.6) +
+  labs(x = "predicted probability", caption = "log(SD)")
+a2 = rbind(kmeans.test, kmeans.train, vsplit.test, vsplit.train) %>%
+  ggplot(aes(x = CORR, fill = category)) +
+  geom_density(alpha = 0.6) +
+  labs(x = "predicted probability", caption = "CORR")
+a3 = rbind(kmeans.test, kmeans.train, vsplit.test, vsplit.train) %>%
+  ggplot(aes(x = NDAI, fill = category)) +
+  geom_density(alpha = 0.6) +
+  labs(x = "predicted probability", caption = "NDAI")
+a4 = rbind(kmeans.test, kmeans.train, vsplit.test, vsplit.train) %>%
+  ggplot(aes(x = DF, fill = category)) +
+  geom_density(alpha = 0.6) +
+  labs(x = "predicted probability", caption = "DF")
+a1 + a2 + a3 + a4
+```
 
 
 
