@@ -8,9 +8,11 @@ The project is structured as follows:
 
 (2) image_data folder: consists of three images as input data
 
-(3) Report folder: contains the .tex file, all the output graphs used to generate the report and the PDF report
+(3) Report folder: contains the .tex file, all the output graphs used to generate the report
 
-(4) README.md
+(4) STA521 Project 2.pdf: the final report
+
+(5) README.md
 
 Inside the R folder, .Rmd files are ordered by the order to execute. Namely, start from `0 readData.Rmd`, then `1 EDA.Rmd`, `2 Preparation.Rmd`, `2d CVmaster.Rmd`, `3 Modelling.Rmd`, and finally `4 Diagnostics.Rmd`.
 
