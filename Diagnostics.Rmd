@@ -243,9 +243,9 @@ a3 = rbind(kmeans.test, kmeans.train, vsplit.test, vsplit.train) %>%
   geom_density(alpha = 0.6) +
   labs(x = "predicted probability", caption = "NDAI")
 a4 = rbind(kmeans.test, kmeans.train, vsplit.test, vsplit.train) %>%
-  ggplot(aes(x = DF, fill = category)) +
+  ggplot(aes(x = AN, fill = category)) +
   geom_density(alpha = 0.6) +
-  labs(x = "predicted probability", caption = "DF")
+  labs(x = "predicted probability", caption = "AN")
 a1 + a2 + a3 + a4
 ```
 
