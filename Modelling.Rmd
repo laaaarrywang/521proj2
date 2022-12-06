@@ -452,22 +452,22 @@ NPVxgb = nrow(as.data.frame(cbind(pred_xgb, test.kmeans$label)) %>%
   dplyr::filter(pred_xgb == -1))
 
 NPVrfv = nrow(as.data.frame(cbind(pred_rfv, test.vsplit$label)) %>% 
-  dplyr::filter(pred_rfv == 0 & V2 == 0))/nrow(as.data.frame(cbind(pred_rfv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_rfv == 0 & V2 == -1))/nrow(as.data.frame(cbind(pred_rfv, test.vsplit$label)) %>% 
   dplyr::filter(pred_rfv == 0))
 NPVlogv = nrow(as.data.frame(cbind(pred_logv, test.vsplit$label)) %>% 
-  dplyr::filter(pred_logv == 0 & V2 == 0))/nrow(as.data.frame(cbind(pred_logv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_logv == 0 & V2 == -1))/nrow(as.data.frame(cbind(pred_logv, test.vsplit$label)) %>% 
   dplyr::filter(pred_logv == 0))
 NPVldav = nrow(as.data.frame(cbind(pred_ldav, test.vsplit$label)) %>% 
-  dplyr::filter(pred_ldav == 0 & V2 == 0))/nrow(as.data.frame(cbind(pred_ldav, test.vsplit$label)) %>% 
+  dplyr::filter(pred_ldav == 0 & V2 == -1))/nrow(as.data.frame(cbind(pred_ldav, test.vsplit$label)) %>% 
   dplyr::filter(pred_ldav == 0))
 NPVqdav = nrow(as.data.frame(cbind(pred_qdav, test.vsplit$label)) %>% 
-  dplyr::filter(pred_qdav == 0 & V2 == 0))/nrow(as.data.frame(cbind(pred_qdav, test.vsplit$label)) %>% 
+  dplyr::filter(pred_qdav == 0 & V2 == -1))/nrow(as.data.frame(cbind(pred_qdav, test.vsplit$label)) %>% 
   dplyr::filter(pred_qdav == 0))
 NPVnbv = nrow(as.data.frame(cbind(pred_nbv, test.vsplit$label)) %>% 
-  dplyr::filter(pred_nbv == 0 & V2 == 0))/nrow(as.data.frame(cbind(pred_nbv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_nbv == 0 & V2 == -1))/nrow(as.data.frame(cbind(pred_nbv, test.vsplit$label)) %>% 
   dplyr::filter(pred_nbv == 0))
 NPVxgbv = nrow(as.data.frame(cbind(pred_xgbv, test.vsplit$label)) %>% 
-  dplyr::filter(pred_xgbv == 0 & V2 == 0))/nrow(as.data.frame(cbind(pred_xgbv, test.vsplit$label)) %>% 
+  dplyr::filter(pred_xgbv == 0 & V2 == -1))/nrow(as.data.frame(cbind(pred_xgbv, test.vsplit$label)) %>% 
   dplyr::filter(pred_xgbv == 0))
 ```
 
@@ -527,12 +527,12 @@ mean(test.kmeans$label == ifelse(predict_nb > cnb$threshold, 1, -1))
 mean(test.kmeans$label == ifelse(predict_XGB > cxgb$threshold, 1, -1))
 print(" ")
 # 0.129, 0.580, 0.181, 0.013, 0.000329, 0.481 - vsplit
-mean(test.vsplit$label == ifelse(prob.pred.rfv > crfv$threshold, 0, 1))
-mean(test.vsplit$label == ifelse(predict_logv > clogisv$threshold, 1, 0))
-mean(test.vsplit$label == ifelse(predict_LDAv > cldav$threshold, 1, 0))
-mean(test.vsplit$label == ifelse(predict_QDAv >cqdav$threshold, 1, 0))
-mean(test.vsplit$label == ifelse(predict_nbv > cnbv$threshold, 1, 0))
-mean(test.vsplit$label == ifelse(predict_XGBv > cxgbv$threshold, 1, 0))
+mean(test.vsplit$label == ifelse(prob.pred.rfv > crfv$threshold, -1, 1))
+mean(test.vsplit$label == ifelse(predict_logv > clogisv$threshold, 1, -1))
+mean(test.vsplit$label == ifelse(predict_LDAv > cldav$threshold, 1, -1))
+mean(test.vsplit$label == ifelse(predict_QDAv >cqdav$threshold, 1, -1))
+mean(test.vsplit$label == ifelse(predict_nbv > cnbv$threshold, 1, -1))
+mean(test.vsplit$label == ifelse(predict_XGBv > cxgbv$threshold, 1, -1))
 ```
 
 ```{r, check best parameters}
