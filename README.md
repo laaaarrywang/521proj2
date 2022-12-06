@@ -17,3 +17,5 @@ The project is structured as follows:
 Inside the R folder, .Rmd files are ordered by the order to execute. Namely, start from `0 readData.Rmd`, then `1 EDA.Rmd`, `2 Preparation.Rmd`, `2d CVmaster.Rmd`, `3 Modelling.Rmd`, and finally `4 Diagnostics.Rmd`.
 
 If we have any new or updated dataset, we only need to modify the `0 readData.Rmd` file so that R would read the new corrected data.
+
+The Github repo of this project could be accessed via https://github.com/laaaarrywang/521proj2
