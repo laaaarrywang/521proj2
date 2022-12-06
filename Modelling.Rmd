@@ -382,16 +382,32 @@ ggroc(list(logistic=roc.obj.logisv,randomForest=roc.obj.rfv, LDA=roc.obj.ldav, Q
 # 0.129, 0.580, 0.181, 0.013, 0.000329, 0.481
 ```
 
+```{r, test accuracy}
+# 0.359, 0.260, 0.278, 0.013, 0.047, 0.290 - kmeans
+mean(test.kmeans$label == ifelse(prob.pred.rf > 0.2601759	, 1, -1))
+mean(test.kmeans$label == ifelse(predict_log > 0.3590394, 1, -1))
+mean(test.kmeans$label == ifelse(predict_LDA > 0.2777812, 1, -1))
+mean(test.kmeans$label == ifelse(predict_QDA > 0.01329383, 1, -1))
+mean(test.kmeans$label == ifelse(predict_nb > 0.0472667, 1, -1))
+mean(test.kmeans$label == ifelse(predict_XGB > 0.2904321, 1, -1))
+print(" ")
+# 0.129, 0.580, 0.181, 0.013, 0.000329, 0.481 - vsplit
+mean(test.vsplit$label == ifelse(prob.pred.rfv > 0.5797375, 0, 1))
+mean(test.vsplit$label == ifelse(predict_logv > 0.129048, 1, 0))
+mean(test.vsplit$label == ifelse(predict_LDAv > 0.1806408, 1, 0))
+mean(test.vsplit$label == ifelse(predict_QDAv > 0.01259511, 1, 0))
+mean(test.vsplit$label == ifelse(predict_nbv > 0.0003292419, 1, 0))
+mean(test.vsplit$label == ifelse(predict_XGBv > 0.4810411, 1, 0))
+```
 
-
-```{r}
+```{r, check best parameters}
 results.rf
 results.rfv
 results.xgb
 results.xgbv
 ```
 
-```{r}
+```{r, check CV error}
 results.log
 results.lda
 results.qda
