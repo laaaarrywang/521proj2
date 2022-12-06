@@ -472,6 +472,7 @@ NPVxgbv = nrow(as.data.frame(cbind(pred_xgbv, test.vsplit$label)) %>%
 ```
 
 ```{r, check PPV and NPV values}
+# PPV - kmeans
 PPVrf
 PPVlog
 PPVlda
@@ -479,6 +480,7 @@ PPVqda
 PPVnb
 PPVxgb
 print(" ")
+# PPV - vsplit
 PPVrfv
 PPVlogv
 PPVldav
@@ -486,6 +488,7 @@ PPVqdav
 PPVnbv
 PPVxgbv
 print(" ")
+# NPV - kmeans
 NPVrf
 NPVlog
 NPVlda
@@ -493,6 +496,7 @@ NPVqda
 NPVnb
 NPVxgb
 print(" ")
+# NPV - vsplit
 NPVrfv
 NPVlogv
 NPVldav
@@ -502,6 +506,7 @@ NPVxgbv
 ```
 
 ```{r, Calculate F1 score}
+# Kmeans
 2*(PPVrf * crf$sensitivity)/(PPVrf + crf$sensitivity)
 2*(PPVlog * clogis$sensitivity)/(PPVlog + clogis$sensitivity)
 2*(PPVlda * clda$sensitivity)/(PPVlda + clda$sensitivity)
@@ -509,6 +514,7 @@ NPVxgbv
 2*(PPVnb * cnb$sensitivity)/(PPVnb + cnb$sensitivity)
 2*(PPVxgb * cxgb$sensitivity)/(PPVxgb + cxgb$sensitivity)
 print(" ")
+# Vsplit
 2*(PPVrfv * crfv$sensitivity)/(PPVrfv + crfv$sensitivity)
 2*(PPVlogv * clogisv$sensitivity)/(PPVlogv + clogisv$sensitivity)
 2*(PPVldav * cldav$sensitivity)/(PPVldav + cldav$sensitivity)
@@ -518,7 +524,7 @@ print(" ")
 ```
 
 ```{r, test accuracy}
-# 0.359, 0.260, 0.278, 0.013, 0.047, 0.290 - kmeans
+# Kmeans
 mean(test.kmeans$label == ifelse(prob.pred.rf > crf$threshold	, 1, -1))
 mean(test.kmeans$label == ifelse(predict_log > clogis$threshold, 1, -1))
 mean(test.kmeans$label == ifelse(predict_LDA > clda$threshold, 1, -1))
@@ -526,7 +532,7 @@ mean(test.kmeans$label == ifelse(predict_QDA > cqda$threshold, 1, -1))
 mean(test.kmeans$label == ifelse(predict_nb > cnb$threshold, 1, -1))
 mean(test.kmeans$label == ifelse(predict_XGB > cxgb$threshold, 1, -1))
 print(" ")
-# 0.129, 0.580, 0.181, 0.013, 0.000329, 0.481 - vsplit
+# Vsplit
 mean(test.vsplit$label == ifelse(prob.pred.rfv > crfv$threshold, -1, 1))
 mean(test.vsplit$label == ifelse(predict_logv > clogisv$threshold, 1, -1))
 mean(test.vsplit$label == ifelse(predict_LDAv > cldav$threshold, 1, -1))
