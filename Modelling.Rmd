@@ -471,7 +471,7 @@ NPVxgbv = nrow(as.data.frame(cbind(pred_xgbv, test.vsplit$label)) %>%
   dplyr::filter(pred_xgbv == 0))
 ```
 
-```{r}
+```{r, check PPV and NPV values}
 PPVrf
 PPVlog
 PPVlda
