@@ -1,0 +1,241 @@
+
+### (b)
+
+```{r, aggregate predicted info}
+# merge predicted probability info into the set
+kmeans.test = cbind(test.kmeans, pred = prob.pred.rf)
+prob.pred.rft = predict(fit.rfv,data=train.kmeans)$predictions[,1]
+kmeans.train = cbind(train.kmeans, pred = prob.pred.rft)
+
+vsplit.test = cbind(test.vsplit, pred = prob.pred.rfv)
+prob.pred.rftv = predict(fit.rfv, data = train.vsplit)$predictions[, 1]
+vsplit.train = cbind(train.vsplit, pred = prob.pred.rftv)
+```
+
+```{r, choice of cutoff}
+# test ROC
+roc.obj.rf <- roc(test.kmeans$label, prob.pred.rf)
+roc.obj.rfv <- roc(test.vsplit$label, prob.pred.rfv)
+
+# train ROC
+roc.obj.rft <- roc(train.kmeans$label, prob.pred.rft)
+roc.obj.rftv <- roc(train.vsplit$label, prob.pred.rftv)
+
+# test + train - get threshold
+crf = coords(roc.obj.rf, "best", ret=c("threshold", "specificity", "sensitivity"))
+crfv = coords(roc.obj.rfv, "best", ret=c("threshold", "specificity", "sensitivity"))
+crft = coords(roc.obj.rft, "best", ret=c("threshold", "specificity", "sensitivity"))
+crftv = coords(roc.obj.rftv, "best", ret=c("threshold", "specificity", "sensitivity"))
+
+# assign label
+pred_rf = ifelse(prob.pred.rf > crf$threshold	, -1, 1)
+pred_rfv = ifelse(prob.pred.rfv > crfv$threshold	, 1, -1)
+pred_rft = ifelse(prob.pred.rft > crft$threshold	, 1, -1)
+pred_rftv = ifelse(prob.pred.rftv > crftv$threshold	, 1, -1)
+
+# combining
+kmeans.test = cbind(kmeans.test, pred_label = pred_rf)
+kmeans.train = cbind(kmeans.train, pred_label = pred_rft)
+vsplit.test = cbind(vsplit.test, pred_label = pred_rfv)
+vsplit.train = cbind(vsplit.train, pred_label = pred_rftv)
+
+# mutate to indicate agreement
+kmeans.test  = kmeans.test %>%
+  mutate(agree = ifelse(pred_label == label, 0, 1))
+kmeans.train  = kmeans.train %>%
+  mutate(agree = ifelse(pred_label == label, 0, 1))
+vsplit.test  = vsplit.test %>%
+  mutate(agree = ifelse(pred_label == label, 0, 1))
+vsplit.train  = vsplit.train %>%
+  mutate(agree = ifelse(pred_label == label, 0, 1))
+```
+
+
+```{r, agreement heatmap}
+p1 = kmeans.test %>%
+  filter(image == 1) %>%
+  ggplot(aes(x,y)) +
+  geom_raster(aes(fill=agree)) +
+  scale_fill_gradientn(colours = c('black','white')) +
+  labs(caption = "K-means test image 1")
+p2 = kmeans.test %>%
+  filter(image == 2) %>%
+  ggplot(aes(x,y)) +
+  geom_raster(aes(fill=agree)) +
+  scale_fill_gradientn(colours = c('black','white'))+
+  labs(caption = "K-means test image 2")
+p3 = kmeans.test %>%
+  filter(image == 3) %>%
+  ggplot(aes(x,y)) +
+  geom_raster(aes(fill=agree)) +
+  scale_fill_gradientn(colours = c('black','white'))+
+  labs(caption = "K-means test image 3")
+
+p4 = kmeans.train %>%
+  filter(image == 1) %>%
+  ggplot(aes(x,y)) +
+  geom_raster(aes(fill=agree)) +
+  scale_fill_gradientn(colours = c('black','white'))+
+  labs(caption = "K-means train image 1")
+p5 = kmeans.train %>%
+  filter(image == 2) %>%
+  ggplot(aes(x,y)) +
+  geom_raster(aes(fill=agree)) +
+  scale_fill_gradientn(colours = c('black','white'))+
+  labs(caption = "K-means train image 2")
+p6 = kmeans.train %>%
+  filter(image == 3) %>%
+  ggplot(aes(x,y)) +
+  geom_raster(aes(fill=agree)) +
+  scale_fill_gradientn(colours = c('black','white'))+
+  labs(caption = "K-means train image 3")
+
+p7 = vsplit.test %>%
+  filter(image == 1) %>%
+  ggplot(aes(x,y)) +
+  geom_raster(aes(fill=agree)) +
+  scale_fill_gradientn(colours = c('black','white'))+
+  labs(caption = "Vertical split test 1")
+p8 = vsplit.test %>%
+  filter(image == 2) %>%
+  ggplot(aes(x,y)) +
+  geom_raster(aes(fill=agree)) +
+  scale_fill_gradientn(colours = c('black','white'))+
+  labs(caption = "Vertical split test 2")
+p9 = vsplit.test %>%
+  filter(image == 3) %>%
+  ggplot(aes(x,y)) +
+  geom_raster(aes(fill=agree)) +
+  scale_fill_gradientn(colours = c('black','white'))+
+  labs(caption = "Vertical split test 3")
+
+p10 = vsplit.train %>%
+  filter(image == 1) %>%
+  ggplot(aes(x,y)) +
+  geom_raster(aes(fill=agree)) +
+  scale_fill_gradientn(colours = c('black','white'))+
+  labs(caption = "Vertical split train 1")
+p11 = vsplit.train %>%
+  filter(image == 2) %>%
+  ggplot(aes(x,y)) +
+  geom_raster(aes(fill=agree)) +
+  scale_fill_gradientn(colours = c('black','white'))+
+  labs(caption = "Vertical split train 2")
+p12 = vsplit.train %>%
+  filter(image == 3) %>%
+  ggplot(aes(x,y)) +
+  geom_raster(aes(fill=agree)) +
+  scale_fill_gradientn(colours = c('black','white'))+
+  labs(caption = "Vertical split train 3")
+
+(p1+p2+p3)/(p4+p5+p6)
+(p7+p8+p9)/(p10+p11+p12)
+```
+
+
+```{r, probability distribution}
+b1 = kmeans.test %>%
+  mutate(agree = as.character(agree)) %>%
+  ggplot(aes(x = pred, fill = agree)) +
+  geom_density(alpha = 0.6) +
+  labs(x = "predicted probability", caption = "K-means test set")
+b2 = kmeans.train %>%
+  mutate(agree = as.character(agree)) %>%
+  ggplot(aes(x = pred, fill = agree)) +
+  geom_density(alpha = 0.6)+
+  labs(x = "predicted probability", caption = "K-means train set")
+b3 = vsplit.test %>%
+  mutate(agree = as.character(agree)) %>%
+  ggplot(aes(x = pred, fill = agree)) +
+  geom_density(alpha = 0.6)+
+  labs(x = "predicted probability", caption = "Vertical split test set")
+b4 = vsplit.train %>%
+  mutate(agree = as.character(agree)) %>%
+  ggplot(aes(x = pred, fill = agree)) +
+  geom_density(alpha = 0.6)+
+  labs(x = "predicted probability", caption = "Vertical split train set")
+b1 + b2 + b3 + b4
+```
+```{r, mutate by TP, TN, FP, TN}
+# mutate to indicate agreement
+kmeans.test  = kmeans.test %>%
+  mutate(category = ifelse(pred_label == label, ifelse(label == -1, "FP", "FN"), ifelse(label == 1, "TP", "TN")))
+kmeans.train  = kmeans.train %>%
+  mutate(category = ifelse(pred_label == label, ifelse(label == -1, "FP", "FN"), ifelse(label == 1, "TP", "TN")))
+vsplit.test  = vsplit.test %>%
+  mutate(category = ifelse(pred_label == label, ifelse(label == -1, "FP", "FN"), ifelse(label == 1, "TP", "TN")))
+vsplit.train  = vsplit.train %>%
+  mutate(category = ifelse(pred_label == label, ifelse(label == -1, "FP", "FN"), ifelse(label == 1, "TP", "TN")))
+```
+
+```{r, range of feature values}
+c1 = kmeans.test %>%
+  ggplot(aes(x = log(SD), fill = category)) +
+  geom_density(alpha = 0.6) +
+  labs(x = "predicted probability", caption = "K-means test set")
+c2 = kmeans.train %>%
+  ggplot(aes(x = log(SD), fill = category)) +
+  geom_density(alpha = 0.6)+
+  labs(x = "predicted probability", caption = "K-means train set")
+c3 = vsplit.test %>%
+  ggplot(aes(x = log(SD), fill = category)) +
+  geom_density(alpha = 0.6)+
+  labs(x = "predicted probability", caption = "Vertical split test set")
+c4 = vsplit.train %>%
+  ggplot(aes(x = log(SD), fill = category)) +
+  geom_density(alpha = 0.6)+
+  labs(x = "predicted probability", caption = "Vertical split train set")
+c1 + c2 + c3 + c4
+```
+
+```{r, range of feature values}
+d1 = kmeans.test %>%
+  ggplot(aes(x = CORR, fill = category)) +
+  geom_density(alpha = 0.6) +
+  labs(x = "predicted probability", caption = "K-means test set")
+d2 = kmeans.train %>%
+  ggplot(aes(x = CORR, fill = category)) +
+  geom_density(alpha = 0.6)+
+  labs(x = "predicted probability", caption = "K-means train set")
+d3 = vsplit.test %>%
+  ggplot(aes(x = CORR, fill = category)) +
+  geom_density(alpha = 0.6)+
+  labs(x = "predicted probability", caption = "Vertical split test set")
+d4 = vsplit.train %>%
+  ggplot(aes(x = CORR, fill = category)) +
+  geom_density(alpha = 0.6)+
+  labs(x = "predicted probability", caption = "Vertical split train set")
+d1 + d2 + d3 + d4
+```
+
+
+```{r, range of feature values}
+e1 = kmeans.test %>%
+  ggplot(aes(x = NDAI, fill = category)) +
+  geom_density(alpha = 0.6) +
+  labs(x = "predicted probability", caption = "K-means test set")
+e2 = kmeans.train %>%
+  ggplot(aes(x = NDAI, fill = category)) +
+  geom_density(alpha = 0.6)+
+  labs(x = "predicted probability", caption = "K-means train set")
+e3 = vsplit.test %>%
+  ggplot(aes(x = NDAI, fill = category)) +
+  geom_density(alpha = 0.6)+
+  labs(x = "predicted probability", caption = "Vertical split test set")
+e4 = vsplit.train %>%
+  ggplot(aes(x = NDAI, fill = category)) +
+  geom_density(alpha = 0.6)+
+  labs(x = "predicted probability", caption = "Vertical split train set")
+e1 + e2 + e3 + e4
+```
+
+
+
+
+
+
+
+
+
+
+
